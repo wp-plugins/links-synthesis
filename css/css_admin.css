@@ -1,0 +1,27 @@
+.aaaa {
+}
+
+div.meta_open {
+   border-style:dashed;
+   border-width:1px;
+   border-color:#DDDDDD;
+   height:auto;
+   overflow:display;
+   padding:5px;
+}
+
+.meta_close {
+   border-style:dashed;
+   border-width:1px;
+   border-color:#DDDDDD;
+   height:100px;
+   overflow:hidden;
+   padding:5px;
+}
+
+.seemore_mht {	
+}
+
+.hide_mht {
+	display:none ; 
+}
