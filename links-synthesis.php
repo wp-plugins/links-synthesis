@@ -3,7 +3,7 @@
 Plugin Name: Links synthesis
 Plugin Tag: tag
 Description: <p>This plugin enables a synthesis of all links in an article and retrieves data from them. </p><p>In this plugin, an index of all links in the page/post is created at the end of the page/post. </p><p>In addition, each link is periodically check to see if the link is still valid. </p><p>Finally, you may customize the display of each link thanks to metatag and headers.</p><p>This plugin is under GPL licence. </p>
-Version: 1.0.1
+Version: 1.0.2
 Framework: SL_Framework
 Author: sedLex
 Author URI: http://www.sedlex.fr/
@@ -51,7 +51,7 @@ class links_synthesis extends pluginSedLex {
 		//		- http://codex.wordpress.org/Plugin_API/Filter_Reference
 		// Be aware that the second argument should be of the form of array($this,"the_function")
 		// For instance add_action( "wp_ajax_foo",  array($this,"bar")) : this function will call the method 'bar' when the ajax action 'foo' is called
-		
+		add_action( "wp_ajax_changeURL",  array($this,"changeURL")) ; 
 		
 		// Important variables initialisation (Do not modify)
 		$this->path = __FILE__ ; 
@@ -581,17 +581,19 @@ p.links_synthesis_entry {
 					
 					if ($match) {
 						$occurrence = "" ; 
+						$occurrence_array = "[" ; 
 						if (is_array(unserialize(str_replace("##&#39;##", "'", $r->occurrence)))) {
 							foreach (unserialize(str_replace("##&#39;##", "'", $r->occurrence)) as $m) {
 								if (is_array($m)) {
-									$postId = intval(str_replace("selectPostWithID", "", $m['id'])) ; 
+									$postId = intval(str_replace("selectPostWithID", "", $m['id'])) ;
+									$occurrence_array .= $postId."," ; 
 									$postpost = get_post($postId) ; 
 									$occurrence .= "<p style='font-size:70%'>".sprintf(__("%s in page %s (%s occurrences)", $this->pluginID), "<span style='font-size:135%'>".$m['text']."</span>", "<a href='".get_permalink($postId)."'>".$postpost->post_title."</a>", $m['nb'])."</p>" ; 
 								}
 							}
 						}
-						
-						$filtered_results[] = array($r->url, $occurrence, $r->http_code,  "", $r->id, $r->last_check, $r->failure_first, $r->header) ; 
+						$occurrence_array .= "-1]" ; 
+						$filtered_results[] = array($r->url, $occurrence, $r->http_code,  "", $r->id, $r->last_check, $r->failure_first, $r->header, $occurrence_array) ; 
 					}
 				}
 				$count = count($filtered_results);
@@ -647,6 +649,9 @@ p.links_synthesis_entry {
 						}
 					}
 					$cel_status = new adminCell("<p>".$status_string."</p>".$redirect_url.$last_check.$first_failure) ;
+					if ($redirect_url!="") {
+						$cel_status->add_action(__("Change to the redirected URL", $this->pluginID), "changeURL('".$r[0]."','".$header_array['redirect_url']."',".$r[8].");") ; 
+					}
 					$table->add_line(array($cel_url, $cel_occurrence, $cel_status), $r[4]) ; 
 				}
 				echo $table->flush() ; 
@@ -1086,6 +1091,34 @@ p.links_synthesis_entry {
 		
 		return $string;
 	}
+	/** ====================================================================================================================================================
+	* Callback to change the URL 
+	*
+	* @return array list of parsed element
+	*/
+	
+	function changeURL() {
+		global $wpdb ; 
+		
+		$newURL = $_POST['newURL'] ; 
+		$oldURL = $_POST['oldURL'] ; 
+		$idPost = $_POST['idPost'] ; 
+		if (is_array($idPost)) {
+			foreach ($idPost as $id) {
+				$postToReplace = get_post($id, ARRAY_A) ; 
+				$postToReplace['post_content'] = str_replace($oldURL, $newURL, $postToReplace['post_content']) ; 
+				wp_update_post($postToReplace) ; 
+			}
+			$update = "UPDATE ".$this->table_name." SET url='".$newURL."', last_check=(NOW()- INTERVAL 400 DAY), http_code='-1' WHERE url='".$oldURL."'" ; 
+			$wpdb->query($update) ; 
+			
+			echo "ok" ; 
+		} else {
+			echo "Error: the IDs are not in an array ..." ; 
+		} 
+		die() ; 
+	}
+
 }
 
 $links_synthesis = links_synthesis::getInstance();

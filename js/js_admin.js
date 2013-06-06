@@ -10,3 +10,28 @@ function toogleMetatag(idElement) {
 	}
 	return false ; 
 }
+
+function changeURL(oldURL, newURL, idPost) {
+	var arguments = {
+		action: 'changeURL', 
+		idPost : idPost,
+		oldURL : oldURL,
+		newURL : newURL
+	} 
+	//POST the data and append the results to the results div
+	jQuery.post(ajaxurl, arguments, function(response) {
+		if (response=="ok") {
+			window.location.href=window.location.href ; 
+		} else {
+			alert(response) ; 
+		}
+	}).error(function(x,e) { 
+		if (x.status==0){
+			//Offline
+		} else if (x.status==500){
+			changeURL(oldURL, newURL) ; 
+		} else {
+			alert("Error "+x.status) ; 
+		}
+	});   
+}

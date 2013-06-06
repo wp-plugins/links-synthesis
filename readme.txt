@@ -27,10 +27,13 @@ This plugin enables a synthesis of all links in an article and retrieves data fr
 
 == Changelog ==
 
+= 1.0.2 = 
+* It is now possible to change URL with redirection to the redirected URL
+
 = 1.0.1 = 
 * First release
 
 == Frequently Asked Questions ==
 
  
-InfoVersion:73ce35713d8590d701f17c6b77081628
+InfoVersion:d65ad2670c485784f7a661982abf0336
