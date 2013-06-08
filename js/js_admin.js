@@ -11,6 +11,39 @@ function toogleMetatag(idElement) {
 	return false ; 
 }
 
+function modifyURL(idLigne) {
+	jQuery("#url"+idLigne).hide();
+	jQuery("#change"+idLigne).show();
+}
+
+function modifyURL2(oldURL, idLigne, idPost) {
+	changeURL(oldURL, jQuery("#newURL"+idLigne).val(), idPost) ; 
+}
+
+function annul_modifyURL(idLigne) {
+	jQuery("#url"+idLigne).show();
+	jQuery("#change"+idLigne).hide();
+}
+
+function recheckURL(oldURL) {
+	var arguments = {
+		action: 'recheckURL', 
+		oldURL : oldURL
+	} 
+	//POST the data and append the results to the results div
+	jQuery.post(ajaxurl, arguments, function(response) {
+		window.location.href=window.location.href ; 
+	}).error(function(x,e) { 
+		if (x.status==0){
+			//Offline
+		} else if (x.status==500){
+			recheckURL(oldURL) ; 
+		} else {
+			alert("Error "+x.status) ; 
+		}
+	});   
+}
+
 function changeURL(oldURL, newURL, idPost) {
 	var arguments = {
 		action: 'changeURL', 

@@ -27,6 +27,9 @@ This plugin enables a synthesis of all links in an article and retrieves data fr
 
 == Changelog ==
 
+= 1.0.3 = 
+* Improve the management of links
+
 = 1.0.2 = 
 * It is now possible to change URL with redirection to the redirected URL
 
@@ -36,4 +39,4 @@ This plugin enables a synthesis of all links in an article and retrieves data fr
 == Frequently Asked Questions ==
 
  
-InfoVersion:d65ad2670c485784f7a661982abf0336
+InfoVersion:5cad4f6ecc6140aac2efbc3d5af82e55

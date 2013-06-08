@@ -3,7 +3,8 @@
 Plugin Name: Links synthesis
 Plugin Tag: tag
 Description: <p>This plugin enables a synthesis of all links in an article and retrieves data from them. </p><p>In this plugin, an index of all links in the page/post is created at the end of the page/post. </p><p>In addition, each link is periodically check to see if the link is still valid. </p><p>Finally, you may customize the display of each link thanks to metatag and headers.</p><p>This plugin is under GPL licence. </p>
-Version: 1.0.2
+Version: 1.0.3
+
 Framework: SL_Framework
 Author: sedLex
 Author URI: http://www.sedlex.fr/
@@ -52,6 +53,7 @@ class links_synthesis extends pluginSedLex {
 		// Be aware that the second argument should be of the form of array($this,"the_function")
 		// For instance add_action( "wp_ajax_foo",  array($this,"bar")) : this function will call the method 'bar' when the ajax action 'foo' is called
 		add_action( "wp_ajax_changeURL",  array($this,"changeURL")) ; 
+		add_action( "wp_ajax_recheckURL",  array($this,"recheckURL")) ; 
 		
 		// Important variables initialisation (Do not modify)
 		$this->path = __FILE__ ; 
@@ -614,7 +616,10 @@ p.links_synthesis_entry {
 				$ligne = 0 ; 
 				foreach ($displayed_results as $r) {
 					$ligne++ ; 
-					$cel_url = new adminCell("<p><a href='".$r[0]."'>".$r[0]."</a></p>") ;
+					$cel_url = new adminCell("<p id='url".$r[4]."'><a href='".$r[0]."'>".$r[0]."</a></p><p id='change".$r[4]."' style='display:none;'><input id='newURL".$r[4]."' type='text' value='".$r[0]."' style='width: 100%;'/><br/><input type='button' onclick='modifyURL2(\"".$r[0]."\",\"".$r[4]."\",".$r[8].");' value='".__("Modify", $this->pluginID)."' class='button-primary validButton'/> &nbsp; <input type='button' onclick='annul_modifyURL(".$r[4].")' value='".__("Cancel", $this->pluginID)."' class='button validButton'/></p>") ;
+					$cel_url->add_action(__("Recheck", $this->pluginID), "recheckURL('".$r[0]."');") ; 
+					$cel_url->add_action(__("Modify", $this->pluginID), "modifyURL('".$r[4]."');") ; 
+
 					$cel_occurrence = new adminCell($r[1]) ;
 					$status_string = $this->http_status_code_string($r[2], true, true, $r[7]) ; 
 					$last_check = "" ; 
@@ -709,17 +714,20 @@ p.links_synthesis_entry {
 							$metatag = "<p><i><strong>%title%</strong></i> : ".$r->title."</p>".$metatag ;
 						}
 						$occurrence = "" ; 
+						$occurrence_array = "[" ; 
 						if (is_array(unserialize(str_replace("##&#39;##", "'", $r->occurrence)))) {
 							foreach (unserialize(str_replace("##&#39;##", "'", $r->occurrence)) as $m) {
 								if (is_array($m)) {
 									$postId = intval(str_replace("selectPostWithID", "", $m['id'])) ; 
 									$postpost = get_post($postId) ; 
+									$occurrence_array .= $postId."," ; 
 									$occurrence .= "<p style='font-size:70%'>".sprintf(__("%s in page %s (%s occurrences)", $this->pluginID), "<span style='font-size:135%'>".$m['text']."</span>", "<a href='".get_permalink($postId)."'>".$postpost->post_title."</a>", $m['nb'])."</p>" ; 
 								}
 							}
 						}
-						
-						$filtered_results[] = array($r->url, $occurrence, $r->http_code,  $metatag, $r->id, $r->last_check, $r->failure_first, $r->header) ; 
+						$occurrence_array .= "-1]" ; 
+
+						$filtered_results[] = array($r->url, $occurrence, $r->http_code,  $metatag, $r->id, $r->last_check, $r->failure_first, $r->header, $occurrence_array) ; 
 					}
 				}
 				$count = count($filtered_results);
@@ -741,6 +749,7 @@ p.links_synthesis_entry {
 				foreach ($displayed_results as $r) {
 					$ligne++ ; 
 					$cel_url = new adminCell("<p><a href='".$r[0]."'>".$r[0]."</a></p>") ;
+					$cel_url->add_action(__("Recheck", $this->pluginID), "recheckURL('".$r[0]."');") ; 
 					$cel_occurrence = new adminCell($r[1]) ;
 					$status_string = $this->http_status_code_string($r[2], true, true, $r[7]) ; 
 					$last_check = "" ; 
@@ -775,6 +784,9 @@ p.links_synthesis_entry {
 						}
 					}
 					$cel_status = new adminCell("<p>".$status_string."</p>".$redirect_url.$last_check.$first_failure) ;
+					if ($redirect_url!="") {
+						$cel_status->add_action(__("Change to the redirected URL", $this->pluginID), "changeURL('".$r[0]."','".$header_array['redirect_url']."',".$r[8].");") ; 
+					}
 					$cel_meta_header = new adminCell("<div id='idmht_".$r[4]."' class='meta_close' onclick='return toogleMetatag(\"".$r[4]."\");'>".$r[3]."</div><div id='sm_mht_".$r[4]."' class='seemore_mht'><a href='#' onclick='return toogleMetatag(\"".$r[4]."\");'>".__("See more keywords...", $this->pluginID)."</a></div><div id='h_mht_".$r[4]."' class='hide_mht'><a href='#' onclick='toogleMetatag(\"".$r[4]."\");'>".__("Hide keywords...", $this->pluginID)."</a></div>") ;
 					$table->add_line(array($cel_url, $cel_occurrence, $cel_status, $cel_meta_header), $r[4]) ; 
 				}
@@ -1091,8 +1103,28 @@ p.links_synthesis_entry {
 		
 		return $string;
 	}
+
+
 	/** ====================================================================================================================================================
-	* Callback to change the URL 
+	* Callback to recheck the URL 
+	*
+	* @return array list of parsed element
+	*/
+	
+	function recheckURL() {
+		global $wpdb ; 
+		
+		$oldURL = $_POST['oldURL'] ; 
+
+		$update = "UPDATE ".$this->table_name." SET last_check=(NOW()- INTERVAL 400 DAY), http_code='-1' WHERE url='".$oldURL."'" ; 
+		$wpdb->query($update) ; 
+			
+		die() ; 
+	}
+	
+
+	/** ====================================================================================================================================================
+	* Callback to change the URL with a new URL
 	*
 	* @return array list of parsed element
 	*/
@@ -1105,11 +1137,17 @@ p.links_synthesis_entry {
 		$idPost = $_POST['idPost'] ; 
 		if (is_array($idPost)) {
 			foreach ($idPost as $id) {
-				$postToReplace = get_post($id, ARRAY_A) ; 
-				$postToReplace['post_content'] = str_replace($oldURL, $newURL, $postToReplace['post_content']) ; 
-				wp_update_post($postToReplace) ; 
+				if ($id != -1) {
+					$postToReplace = get_post($id, ARRAY_A) ; 
+					$old = $postToReplace['post_content'] ; 
+					$postToReplace['post_content'] = str_replace($oldURL, $newURL, $postToReplace['post_content']) ; 
+					if ($old==$postToReplace['post_content']) {
+						echo sprintf(__("Cannot found '%s' in '%s'. There is probably an issue with special characters. Thus edit the article manually to modify this link.", $this->pluginID), $oldURL, $postToReplace['post_title']) ; 
+					}
+					wp_update_post($postToReplace) ; 
+				}
 			}
-			$update = "UPDATE ".$this->table_name." SET url='".$newURL."', last_check=(NOW()- INTERVAL 400 DAY), http_code='-1' WHERE url='".$oldURL."'" ; 
+			$update = "DELETE FROM ".$this->table_name." WHERE url='".$oldURL."';" ; 
 			$wpdb->query($update) ; 
 			
 			echo "ok" ; 
