@@ -39,4 +39,4 @@ This plugin enables a synthesis of all links in an article and retrieves data fr
 == Frequently Asked Questions ==
 
  
-InfoVersion:5cad4f6ecc6140aac2efbc3d5af82e55
+InfoVersion:dc824bed55e6711f15ea6f7c030a70d8

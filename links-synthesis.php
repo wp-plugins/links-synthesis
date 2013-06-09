@@ -4,7 +4,6 @@ Plugin Name: Links synthesis
 Plugin Tag: tag
 Description: <p>This plugin enables a synthesis of all links in an article and retrieves data from them. </p><p>In this plugin, an index of all links in the page/post is created at the end of the page/post. </p><p>In addition, each link is periodically check to see if the link is still valid. </p><p>Finally, you may customize the display of each link thanks to metatag and headers.</p><p>This plugin is under GPL licence. </p>
 Version: 1.0.3
-
 Framework: SL_Framework
 Author: sedLex
 Author URI: http://www.sedlex.fr/
@@ -367,11 +366,16 @@ class links_synthesis extends pluginSedLex {
   			return $matches[0] ; 
   		}
   		
+  		// si lien vers admin on ne fait rien
+  		if (strpos($matches[2], site_url('/wp-admin/'))!==false) {
+  			return $matches[0] ; 
+  		}
+  		
   		// On regarde si on doit l'afficher
   		$toBeDisplayed = true ; 
   		if ($this->get_param('only_external')) {
-			if (strpos($matches[2], site_url())!==false) {
-				$toBeDisplayed = false ;   	
+			if (strpos($matches[2], home_url())!==false) {
+				return $matches[0] ; 
 			}		
   		}
   		
