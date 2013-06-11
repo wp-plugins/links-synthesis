@@ -3,7 +3,7 @@
 Plugin Name: Links synthesis
 Plugin Tag: tag
 Description: <p>This plugin enables a synthesis of all links in an article and retrieves data from them. </p><p>In this plugin, an index of all links in the page/post is created at the end of the page/post. </p><p>In addition, each link is periodically check to see if the link is still valid. </p><p>Finally, you may customize the display of each link thanks to metatag and headers.</p><p>This plugin is under GPL licence. </p>
-Version: 1.0.3
+Version: 1.0.4
 Framework: SL_Framework
 Author: sedLex
 Author URI: http://www.sedlex.fr/
@@ -248,22 +248,6 @@ class links_synthesis extends pluginSedLex {
 			}
 		}
 		
-		// We remove all occurrence of current post as it will be readded
-		$result = $wpdb->get_results("SELECT * FROM ".$this->table_name." WHERE occurrence like '%selectPostWithID".$post->ID."%'; ") ; 
-		foreach ($result as $r) {
-			$array_occurrence = unserialize(str_replace("##&#39;##", "'", $r->occurrence)) ; 
-			if (is_array($array_occurrence)) {
-				$new_array_occurrence = array() ; 
-				foreach ($array_occurrence as $ao) {
-					if ($ao['id']!="selectPostWithID".$post->ID) {
-						$new_array_occurrence[] = $ao ; 
-					}
-				}
-				$update = "UPDATE ".$this->table_name." SET occurrence='".str_replace("'", "##&#39;##", serialize($new_array_occurrence))."' WHERE id='".$r->id."'" ; 
-				$wpdb->query($update) ; 
-			}
-		}
-		
 		// We check whether it is to be dispalyed in 
 		if ( ($excerpt == true) && (!$this->get_param('display_in_excerpt')) )
 			return $content ; 
@@ -272,6 +256,7 @@ class links_synthesis extends pluginSedLex {
 		$content = preg_replace_callback($pattern, array($this,"_modify_content_callback"), $content);
 		
 		ob_start() ; 
+		
 			foreach ($this->table_links as $tl) {
 				if (trim($tl['title'])=="") {
 					$tl['title'] = $tl['url'] ; 
@@ -329,16 +314,109 @@ class links_synthesis extends pluginSedLex {
 				$truc = str_replace(", ,", "", $truc) ; 
 				$truc = trim($truc) ; 
 				echo $truc ; 
+				
+				
+				// We update the number of occurrence
+				$result = $wpdb->get_results("SELECT * FROM ".$this->table_name." WHERE url='".str_replace("'", "&#39;", $tl['url'])."' LIMIT 1 ; ") ; 
+				if ( $result ) {
+					$current_occurrence = unserialize(str_replace("##&#39;##", "'", $result[0]->occurrence)) ; 
+					
+					if (!is_array($current_occurrence)) {
+						$current_occurrence = array() ; 
+					}
+					
+					$renumerot_necessaire = false ; 
+					
+					// On parcours les occurrences deja enregistre pour mettre a jour celle ci
+					$count_init = count($current_occurrence) ; 
+					for ($i=0 ; $i<$count_init ; $i++) {
+						if ($current_occurrence[$i]["id"] == "selectPostWithID".$post->ID) {
+							if (isset($tl["occ"][$current_occurrence[$i]["text"]])) {
+								if ($current_occurrence[$i]["nb"]!=$tl["occ"][$current_occurrence[$i]["text"]]) {
+									$current_occurrence[$i]["nb"] = $tl["occ"][$current_occurrence[$i]["text"]] ; 
+								}
+							// Si on a pas trouvé l'occurrence dans $tl["occ"], cela veut dire qu'il a été supprimé, on le supprime aussi de $current_occurrence
+							} else {
+								unset($current_occurrence[$i]);
+								$renumerot_necessaire = true ; 
+							}
+						}
+					}
+					// On renumerote les index si necessaire
+					if ($renumerot_necessaire) {
+						$current_occurrence = array_values($current_occurrence) ; 
+					}
+					// On parcours $tl["occ"] pour mettre a jour les occurrences deja enregistre 
+					foreach ($tl["occ"] as $k => $v) {
+						$found_occ = false ; 
+						for ($i=0 ; $i<count($current_occurrence) ; $i++) {
+							if ($k == $current_occurrence[$i]["text"]) {
+								$found_occ = true ; 
+							}
+						}
+						if (!$found_occ) {
+							$current_occurrence[] = array("id"=>"selectPostWithID".$post->ID, "text"=>$k, "nb"=>$v) ; 
+						}
+					}
+					// On verifie que l'on a besoin de mettre a jour ou non la base SQL
+					$new_serialized_occurrence = str_replace("'", "##&#39;##", serialize($current_occurrence)) ; 
+					
+					if ($new_serialized_occurrence != $result[0]->occurrence) {
+						if (count($current_occurrence)>0) {
+							$update = "UPDATE ".$this->table_name." SET occurrence='".$new_serialized_occurrence."' WHERE id='".$result[0]->id."'" ; 
+							$wpdb->query($update) ; 
+						} else {
+							$delete = "DELETE FROM ".$this->table_name." WHERE id='".$result[0]->id."'" ; 
+							$wpdb->query($delete) ; 							
+						}
+					}
+				} 
 			}
+			
+			
+		$reftable = ob_get_clean() ; 
 		if ( ($this->get_param('display')) || ( ($this->get_param('display_admin'))&&(is_user_logged_in()) ) ) {
-			$content = $content.str_replace("%links_synthesis%", ob_get_clean(), $this->get_param('html')) ; 
+			$content = $content.str_replace("%links_synthesis%", $reftable, $this->get_param('html')) ; 
 		} else {
-			$vide = ob_get_clean() ; 
+			$vide = $reftable ; 
 		}
 		
-		// We delete all entries that have no occurrence
-		$wpdb->query("DELETE FROM ".$this->table_name." WHERE occurrence='a:0:{}'") ; 
-		
+		// we delete these entries that are not in $this->table_links
+		$result = $wpdb->get_results("SELECT * FROM ".$this->table_name." WHERE occurrence like '%selectPostWithID".$post->ID."%'; ") ; 
+		if (is_array($result)) {
+			foreach ($result as $r) {
+				$present = false ; 
+				foreach ($this->table_links as $tl) {
+					if ($tl['url']==$r->url) {
+						$present = true ; 
+						break ; 
+					}
+				}
+				if (!$present) {
+					// We delete this occurrence of this URL in the database and for this page id
+					$current_occurrence = unserialize(str_replace("##&#39;##", "'", $r->occurrence)) ; 
+					if (is_array($current_occurrence)) {
+						$new_occurrence = array() ; 
+						foreach ($current_occurrence as $ao) {
+							if ($ao['id']!="selectPostWithID".$post->ID) {
+								$new_occurrence[] = $ao ; 
+							}
+						}
+						
+						$new_serialized_occurrence = str_replace("'", "##&#39;##", serialize($new_occurrence)) ; 
+						if ($new_serialized_occurrence != $r->occurrence) {
+							if (count($new_occurrence)>0) {
+								$update = "UPDATE ".$this->table_name." SET occurrence='".$new_serialized_occurrence."' WHERE id='".$r->id."'" ; 
+							} else {
+								$update = "DELETE FROM ".$this->table_name." WHERE id='".$r->id."'" ; 
+							}
+							$wpdb->query($update) ; 
+						}
+					}		
+				}
+			}	
+		}
+				
 		return $content; 
 	}
 	
@@ -377,32 +455,9 @@ class links_synthesis extends pluginSedLex {
 			if (strpos($matches[2], home_url())!==false) {
 				return $matches[0] ; 
 			}		
-  		}
-  		
-  		// Check if the text is already in sql
-		$result = $wpdb->get_results("SELECT * FROM ".$this->table_name." WHERE url='".str_replace("'", "&#39;", $matches[2])."' LIMIT 1 ; ") ; 
-		if ( $result ) {
-			$array_text = unserialize(str_replace("##&#39;##", "'", $result[0]->occurrence)) ; 
-			$found_in_array_text = false ; 
-			if (is_array($array_text)) {
-				for ($i=0 ; $i<count($array_text) ; $i++) {
-					if ($array_text[$i]["text"] == trim(strip_tags($matches[4]))) {
-						$found_in_array_text = true ; 
-						$array_text[$i]["nb"] ++ ; 
-					}
-				}
-				if (!$found_in_array_text) {
-					$array_text[] = array("id"=>"selectPostWithID".$post->ID, "text"=>trim(strip_tags($matches[4])), "nb"=>1) ; 
-				}
-				$update = "UPDATE ".$this->table_name." SET occurrence='".str_replace("'", "##&#39;##", serialize($array_text))."' WHERE id='".$result[0]->id."'" ; 
-			} else {
-				$update = "UPDATE ".$this->table_name." SET occurrence='".str_replace("'", "##&#39;##", serialize(array(array("id"=>"selectPostWithID".$post->ID, "text"=>trim(strip_tags($matches[4])), "nb"=>1))))."' WHERE id='".$result[0]->id."'" ; 
-			}
-			$wpdb->query($update) ; 
-		} else {
-			$wpdb->query("INSERT INTO ".$this->table_name." (url, occurrence, http_code) VALUES ('".str_replace("'", "&#39;", $matches[2])."','".str_replace("'", "##&#39;##", serialize(array(array("id"=>"selectPostWithID".$post->ID, "text"=>trim(strip_tags($matches[4])), "nb"=>1))))."', -1) ; ") ; 	
-		}				
-
+  		}		
+		
+		// We update the list
    		if (!isset($this->table_links[md5($matches[2])])) {
 			$this->count_nb ++ ; 
   	   		$result = $wpdb->get_results("SELECT * FROM ".$this->table_name." WHERE url='".str_replace("'", "&#39;", $matches[2])."' LIMIT 1 ; ") ; 
@@ -415,9 +470,19 @@ class links_synthesis extends pluginSedLex {
 				} else {
 					$status = $this->http_status_code_string($result[0]->http_code, true, true); 
 				}
-				$this->table_links[md5($matches[2])] = array("num"=>$this->count_nb, "url"=>$matches[2], "title"=>$result[0]->title, "status"=>$status, "metatag"=>$result[0]->metatag, "header"=>$result[0]->header, "http_code"=>$result[0]->http_code) ; 				
-			} 
+				$this->table_links[md5($matches[2])] = array("num"=>$this->count_nb, "occ"=> array(), "url"=>$matches[2], "title"=>$result[0]->title, "status"=>$status, "metatag"=>$result[0]->metatag, "header"=>$result[0]->header, "http_code"=>$result[0]->http_code) ; 				
+			} else {
+				$this->table_links[md5($matches[2])] = array("num"=>$this->count_nb, "occ"=> array(), "url"=>$matches[2], "title"=>"", "status"=>$this->http_status_code_string(-1, true, true) , "metatag"=>serialize(array()), "header"=>serialize(array()), "http_code"=>-1) ; 				
+				$wpdb->query("INSERT INTO ".$this->table_name." (url, http_code) VALUES ('".str_replace("'", "&#39;", $matches[2])."', -1) ;") ; 	
+			}
    		} 
+   		
+   		// We update the occurrence of text in the list
+		if (isset($this->table_links[md5($matches[2])]["occ"][trim($matches[4])])) {
+			$this->table_links[md5($matches[2])]["occ"][trim($matches[4])] ++ ; 
+		} else {
+			$this->table_links[md5($matches[2])]["occ"][trim($matches[4])] = 1 ; 
+		}
   		
   		if (($toBeDisplayed) && ( ($this->get_param('display')) || ( ($this->get_param('display_admin'))&&(is_user_logged_in()) ) )) {
   			if (($this->get_param('display_error_admin'))&&(is_user_logged_in())) {
