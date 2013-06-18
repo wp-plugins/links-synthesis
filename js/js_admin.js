@@ -53,7 +53,7 @@ function changeURL(oldURL, newURL, idPost) {
 	} 
 	//POST the data and append the results to the results div
 	jQuery.post(ajaxurl, arguments, function(response) {
-		if (response=="ok") {
+		if (response=="") {
 			window.location.href=window.location.href ; 
 		} else {
 			alert(response) ; 

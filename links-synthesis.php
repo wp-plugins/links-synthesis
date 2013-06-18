@@ -3,7 +3,8 @@
 Plugin Name: Links synthesis
 Plugin Tag: tag
 Description: <p>This plugin enables a synthesis of all links in an article and retrieves data from them. </p><p>In this plugin, an index of all links in the page/post is created at the end of the page/post. </p><p>In addition, each link is periodically check to see if the link is still valid. </p><p>Finally, you may customize the display of each link thanks to metatag and headers.</p><p>This plugin is under GPL licence. </p>
-Version: 1.0.4
+Version: 1.0.5
+
 Framework: SL_Framework
 Author: sedLex
 Author URI: http://www.sedlex.fr/
@@ -305,6 +306,15 @@ class links_synthesis extends pluginSedLex {
 						}
 					}
 				}
+				// #REPLACE(word_to_find#word_to_replace#sentence)# 
+				if (strpos($truc, "#REPLACE(")!==false) {
+					$truc = preg_replace_callback("/#REPLACE\(([^#]*)#([^#]*)#([^#]*)\)#/", array($this, "_replace_in_links"), $truc) ;
+				}
+				// #EXPLODE(delimiter#sentence)(nb)# 
+				if (strpos($truc, "#EXPLODE(")!==false) {
+					$truc = preg_replace_callback("/#EXPLODE\(([^#]*)#([^#]*)\)\(([^#]*)\)#/", array($this, "_explode_in_links"), $truc) ;
+				}
+				
 				// remove unused tag
 				$truc = preg_replace("/\%[^\%]*\%/i", "", $truc) ; 
 				// Cosmetic
@@ -335,7 +345,7 @@ class links_synthesis extends pluginSedLex {
 								if ($current_occurrence[$i]["nb"]!=$tl["occ"][$current_occurrence[$i]["text"]]) {
 									$current_occurrence[$i]["nb"] = $tl["occ"][$current_occurrence[$i]["text"]] ; 
 								}
-							// Si on a pas trouvé l'occurrence dans $tl["occ"], cela veut dire qu'il a été supprimé, on le supprime aussi de $current_occurrence
+							// Si on a pas trouve l'occurrence dans $tl["occ"], cela veut dire qu'il a été supprimé, on le supprime aussi de $current_occurrence
 							} else {
 								unset($current_occurrence[$i]);
 								$renumerot_necessaire = true ; 
@@ -419,6 +429,40 @@ class links_synthesis extends pluginSedLex {
 				
 		return $content; 
 	}
+	
+	/** ====================================================================================================================================================
+	* Called when #REPLACE(word_to_find#word_to_replace#sentence)# is found
+	*
+	* @param array matches found in the content
+	* @return string the new content to be replaced with
+	*/
+	
+	function _replace_in_links($matches) {
+  		// comme d'habitude : $matches[0] represente la valeur totale
+  		// $matches[1] represente la premiere parenthese capturante
+  		
+  		return str_replace($matches[1], $matches[2], $matches[3]) ; 
+  	}
+
+	/** ====================================================================================================================================================
+	* Called when #EXPLODE(delimiter#sentence)(nb)# is found
+	*
+	* @param array matches found in the content
+	* @return string the new content to be replaced with
+	*/
+	
+	function _explode_in_links($matches) {
+  		// comme d'habitude : $matches[0] represente la valeur totale
+  		// $matches[1] represente la premiere parenthese capturante
+  		
+  		$explode_str = explode($matches[1], $matches[2]) ; 
+  		if (isset($explode_str[$matches[3]])) {
+  			return $explode_str[$matches[3]] ; 
+  		} else {
+  		  	return $matches[2] ; 
+  		}
+  	}
+
 	
 	/** ====================================================================================================================================================
 	* Called when a link is found
@@ -884,6 +928,9 @@ p.links_synthesis_entry {
 				$comment .= "<br>".sprintf(__("- %s for the URL of the link",$this->pluginID), "<code>%href%</code>");
 				$comment .= "<br>".sprintf(__("- %s for the status of the link check (displayed only when a user is logged)",$this->pluginID), "<code>%admin_status%</code>");
 				$comment .= "<br>".__("- and all the keywords indicated in the previous tab",$this->pluginID);
+				$comment .= "<br>" ; 
+				$comment .= "<br>".sprintf(__("You may also used this : %s to replace an expression.",$this->pluginID), "<code>#REPLACE(word_to_find#word_to_replace#sentence)#</code>");
+				$comment .= "<br>".sprintf(__("You may also used this : %s to explode an expression according to a given delimiter and to keep the occurrence %s.",$this->pluginID), "<code>#EXPLODE(delimiter#sentence)(num)#</code>", "<code>delimiter</code>", "<code>num</code>" );
 				$params->add_comment(sprintf(__('In this HTML you may use: %s',  $this->pluginID), $comment)) ; 
 				$params->add_param('css', __('CSS:',  $this->pluginID)) ; 
 				$params->add_comment(__('The default value is:',  $this->pluginID)) ; 
@@ -908,6 +955,9 @@ p.links_synthesis_entry {
 				$comment .= "<br>".sprintf(__("- %s for the URL of the link",$this->pluginID), "<code>%href%</code>");
 				$comment .= "<br>".sprintf(__("- %s for the status of the link check (displayed only when a user is logged)",$this->pluginID), "<code>%admin_status%</code>");
 				$comment .= "<br>".__("- and all the keywords indicated in the previous tab",$this->pluginID);
+				$comment .= "<br>";
+				$comment .= "<br>".sprintf(__("You may also used this : %s to replace an expression.",$this->pluginID), "<code>#REPLACE(word_to_find#word_to_replace#sentence)#</code>");
+				$comment .= "<br>".sprintf(__("You may also used this : %s to explode an expression according to a given delimiter and to keep the occurrence %s.",$this->pluginID), "<code>#EXPLODE(delimiter#sentence)(num)#</code>", "<code>delimiter</code>", "<code>num</code>" );
 				$params->add_comment(sprintf(__('In this HTML you may use: %s',  $this->pluginID), $comment)) ; 
 				
 				$params->flush() ; 
@@ -1211,7 +1261,12 @@ p.links_synthesis_entry {
 					$old = $postToReplace['post_content'] ; 
 					$postToReplace['post_content'] = str_replace($oldURL, $newURL, $postToReplace['post_content']) ; 
 					if ($old==$postToReplace['post_content']) {
-						echo sprintf(__("Cannot found '%s' in '%s'. There is probably an issue with special characters. Thus edit the article manually to modify this link.", $this->pluginID), $oldURL, $postToReplace['post_title']) ; 
+						$oldURL = str_replace("&", "&amp;",$oldURL) ; 
+						$postToReplace['post_content'] = str_replace($oldURL, $newURL, $postToReplace['post_content']) ; 
+						if ($old==$postToReplace['post_content']) {
+							echo sprintf(__("Cannot found '%s' in '%s'. There is probably an issue with special characters. Thus edit the article manually to modify this link.", $this->pluginID), $oldURL, $postToReplace['post_title']) ; 
+							die() ; 
+						}
 					}
 					wp_update_post($postToReplace) ; 
 				}
@@ -1219,7 +1274,6 @@ p.links_synthesis_entry {
 			$update = "DELETE FROM ".$this->table_name." WHERE url='".$oldURL."';" ; 
 			$wpdb->query($update) ; 
 			
-			echo "ok" ; 
 		} else {
 			echo "Error: the IDs are not in an array ..." ; 
 		} 

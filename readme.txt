@@ -55,6 +55,9 @@ Have fun !
 
 == Changelog ==
 
+= 1.0.5 = 
+* It is now possible to use pseudo function REPLACE and EXPLODE
+
 = 1.0.4 = 
 * Limit the number of update of the DB
 * Resolve a bug which delete valid link
@@ -71,4 +74,4 @@ Have fun !
 == Frequently Asked Questions ==
 
  
-InfoVersion:395b62abb9749c02659c0f0f718c2c27
+InfoVersion:3a7e4ffcb73f3d18de99e724aaed0acc
