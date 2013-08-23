@@ -3,7 +3,7 @@
 Plugin Name: Links synthesis
 Plugin Tag: tag
 Description: <p>This plugin enables a synthesis of all links in an article and retrieves data from them. </p><p>In this plugin, an index of all links in the page/post is created at the end of the page/post. </p><p>In addition, each link is periodically check to see if the link is still valid. </p><p>Finally, you may customize the display of each link thanks to metatag and headers.</p><p>This plugin is under GPL licence. </p>
-Version: 1.0.5
+Version: 1.0.6
 
 Framework: SL_Framework
 Author: sedLex
@@ -306,13 +306,13 @@ class links_synthesis extends pluginSedLex {
 						}
 					}
 				}
-				// #REPLACE(word_to_find#word_to_replace#sentence)# 
+				// #REPLACE(word_to_find##word_to_replace##sentence)# 
 				if (strpos($truc, "#REPLACE(")!==false) {
-					$truc = preg_replace_callback("/#REPLACE\(([^#]*)#([^#]*)#([^#]*)\)#/", array($this, "_replace_in_links"), $truc) ;
+					$truc = preg_replace_callback("/#REPLACE\((.*)##(.*)##(.*)\)#/mU", array($this, "_replace_in_links"), $truc) ;
 				}
-				// #EXPLODE(delimiter#sentence)(nb)# 
+				// #EXPLODE(delimiter##sentence)(nb)# 
 				if (strpos($truc, "#EXPLODE(")!==false) {
-					$truc = preg_replace_callback("/#EXPLODE\(([^#]*)#([^#]*)\)\(([^#]*)\)#/", array($this, "_explode_in_links"), $truc) ;
+					$truc = preg_replace_callback("/#EXPLODE\((.*)##(.*)\)\((.*)\)#/mU", array($this, "_explode_in_links"), $truc) ;
 				}
 				
 				// remove unused tag
@@ -670,9 +670,16 @@ p.links_synthesis_entry {
 			
 			$tabs = new adminTabs() ; 
 			
-			
 			ob_start() ; 
 				$maxnb = 20 ; 
+
+				$synthesis = "<p>".__("All the links are showed here.", $this->pluginID)."</p>" ; 
+				$nb_all = $wpdb->get_var("SELECT COUNT(*) FROM ".$this->table_name."") ; 
+				$nb_200 = $wpdb->get_var("SELECT COUNT(*) FROM ".$this->table_name." WHERE http_code='200'") ; 
+				$nb_notchecked = $wpdb->get_var("SELECT COUNT(*) FROM ".$this->table_name." WHERE http_code='-1'") ; 
+
+				$synthesis .= "<p>".sprintf(__("For now, there are %s links (%s ok, %s with errors and %s not yet checked).", $this->pluginID), $nb_all, $nb_200, $nb_all-$nb_200-$nb_notchecked, $nb_notchecked)."</p>" ; 
+				echo $synthesis ; 
 				
 				$table = new adminTable(0, $maxnb, true, true) ;
 				$table->title(array(__('URL', $this->pluginID), __('Posts/Articles', $this->pluginID), __('Status', $this->pluginID))) ; 
@@ -680,10 +687,11 @@ p.links_synthesis_entry {
 				// Tous les resultats
 				$results = $wpdb->get_results("SELECT * FROM ".$this->table_name." WHERE http_code!='200' AND http_code!='-1'") ; 
 				
-				// On filtre les resultats
 				$filtered_results = array() ; 
 				$filter = explode(" ", $table->current_filter()) ; 
 				foreach ($results as $r) {
+					
+					// We filter the results
 					$match = true ;
 					foreach ($filter as $fi) {
 						if ($fi!="") {
@@ -773,19 +781,30 @@ p.links_synthesis_entry {
 					$table->add_line(array($cel_url, $cel_occurrence, $cel_status), $r[4]) ; 
 				}
 				echo $table->flush() ; 
-				
+												
 			$tabs->add_tab(__('Links with Errors',  $this->pluginID), ob_get_clean()) ; 
 
 			ob_start() ; 
 				$maxnb = 20 ; 
 				
-				echo "<p>".__("All the links are showed here.", $this->pluginID)."</p>" ; 
-				$nb_all = $wpdb->get_var("SELECT COUNT(*) FROM ".$this->table_name."") ; 
-				$nb_200 = $wpdb->get_var("SELECT COUNT(*) FROM ".$this->table_name." WHERE http_code='200'") ; 
-				$nb_notchecked = $wpdb->get_var("SELECT COUNT(*) FROM ".$this->table_name." WHERE http_code='-1'") ; 
-
-				echo "<p>".sprintf(__("For now, there are %s links (%s ok, %s with errors and %s not yet checked).", $this->pluginID), $nb_all, $nb_200, $nb_all-$nb_200-$nb_notchecked, $nb_notchecked)."</p>" ; 
+				$all_regexp = $this->get_param_macro('custom_regexp') ; 
+				$nb_match_regexp = array() ; 
+				$nb_match_regexp['normal'] = 0 ; 
 				
+				echo $synthesis ; 
+				
+				echo "<h3>".__("Filter links based on Custom rule ", $this->pluginID)."</h3>" ; 
+				echo "<form method='GET' action='".remove_query_arg(array('show_regexp'))."'>" ; 
+				$check = "" ; 
+				if ((!isset($show_regexp))||(isset($show_regexp['normal']))) {
+					$check = "checked" ; 
+				}
+				echo "<p><input type='checkbox' name='show_regexp[]' value='normal' $check> ".__("Links which do not match any regex of Custom rule", $this->pluginID)."</p>" ; 
+				foreach ($all_regexp as $r) {
+					echo "<p><input type='checkbox' name='show_regexp[]' value='".md5($r)."'> ".sprintf(__("Links which match regex %s", $this->pluginID), "<code>".$r."</code>")."</p>" ; 
+				}
+				echo "<p><input type='submit' class='button-primary validButton' value='".__("Filter results based on regexp",$this->pluginID)."'/></p>" ; 
+				echo "</form>";		
 				
 				$table = new adminTable(0, $maxnb, true, true) ;
 				$table->title(array(__('URL', $this->pluginID), __('Posts/Articles', $this->pluginID), __('Status', $this->pluginID), __('Keywords', $this->pluginID))) ; 
@@ -797,6 +816,29 @@ p.links_synthesis_entry {
 				$filtered_results = array() ; 
 				$filter = explode(" ", $table->current_filter()) ; 
 				foreach ($results as $r) {
+				
+					// We first look if the url match a regexp
+					$match_regexp = false ; 
+					for ($i=0 ; $i<count($all_regexp) ; $i++) {
+						if (preg_match($all_regexp[$i],$r->url)) {
+							if (isset($nb_match_regexp[$all_regexp[$i]])) {
+								$nb_match_regexp[$all_regexp[$i]] ++ ; 
+							} else {
+								$nb_match_regexp[$all_regexp[$i]] = 1 ; 
+							}
+							$match_regexp = true ; 
+							break ; 
+						}
+					}
+					
+					if (!$match_regexp) {
+						$nb_match_regexp['normal'] ++ ; 
+					} else {
+						if (isset($_GET['show_only_default_matching'])) {
+							continue ; 
+						}
+					}
+					
 					$match = true ;
 					foreach ($filter as $fi) {
 						if ($fi!="") {
@@ -905,6 +947,7 @@ p.links_synthesis_entry {
 				}
 				echo $table->flush() ; 
 				
+
 			$tabs->add_tab(__('All links',  $this->pluginID), ob_get_clean()) ; 	
 
 			ob_start() ; 
@@ -920,6 +963,7 @@ p.links_synthesis_entry {
 				$params->add_comment(__('The default value is:',  $this->pluginID)) ; 
 				$params->add_comment_default_value('html') ; 
 				$params->add_param('html_entry', __('HTML for each entry of the synthesis (see below for custom HTML):',  $this->pluginID)) ; 
+				
 				$params->add_comment(__('The default value is:',  $this->pluginID)) ; 
 				$params->add_comment_default_value('html_entry') ; 
 				$comment  = "<br>".sprintf(__("- %s for the title of the page",$this->pluginID), "<code>%title%</code>") ; 
@@ -929,8 +973,8 @@ p.links_synthesis_entry {
 				$comment .= "<br>".sprintf(__("- %s for the status of the link check (displayed only when a user is logged)",$this->pluginID), "<code>%admin_status%</code>");
 				$comment .= "<br>".__("- and all the keywords indicated in the previous tab",$this->pluginID);
 				$comment .= "<br>" ; 
-				$comment .= "<br>".sprintf(__("You may also used this : %s to replace an expression.",$this->pluginID), "<code>#REPLACE(word_to_find#word_to_replace#sentence)#</code>");
-				$comment .= "<br>".sprintf(__("You may also used this : %s to explode an expression according to a given delimiter and to keep the occurrence %s.",$this->pluginID), "<code>#EXPLODE(delimiter#sentence)(num)#</code>", "<code>delimiter</code>", "<code>num</code>" );
+				$comment .= "<br>".sprintf(__("You may also used this : %s to replace an expression.",$this->pluginID), "<code>#REPLACE(word_to_find##word_to_replace##sentence)#</code>");
+				$comment .= "<br>".sprintf(__("You may also used this : %s to explode an expression according to a given delimiter and to keep the occurrence %s.",$this->pluginID), "<code>#EXPLODE(delimiter##sentence)(num)#</code>", "<code>delimiter</code>", "<code>num</code>" );
 				$params->add_comment(sprintf(__('In this HTML you may use: %s',  $this->pluginID), $comment)) ; 
 				$params->add_param('css', __('CSS:',  $this->pluginID)) ; 
 				$params->add_comment(__('The default value is:',  $this->pluginID)) ; 
@@ -949,6 +993,7 @@ p.links_synthesis_entry {
 				$params->add_title_macroblock(__('Custom rule %s',  $this->pluginID), __('Add a new custom rule',  $this->pluginID)) ; 
 				$params->add_param('custom_regexp', __('Regexp for this rule:',  $this->pluginID)) ;  
 				$params->add_param('custom_display', __('Custom HTML for each entry of the synthesis:',  $this->pluginID)) ;  
+				
 				$comment  = "<br>".sprintf(__("- %s for the title of the page",$this->pluginID), "<code>%title%</code>") ; 
 				$comment .= "<br>".sprintf(__("- %s for the num of the link in the page",$this->pluginID), "<code>%num%</code>");
 				$comment .= "<br>".sprintf(__("- %s for the HTML anchor used to attach the link in the article to the synthesis (mandatory)",$this->pluginID), "<code>%anchor%</code>");
@@ -956,11 +1001,25 @@ p.links_synthesis_entry {
 				$comment .= "<br>".sprintf(__("- %s for the status of the link check (displayed only when a user is logged)",$this->pluginID), "<code>%admin_status%</code>");
 				$comment .= "<br>".__("- and all the keywords indicated in the previous tab",$this->pluginID);
 				$comment .= "<br>";
-				$comment .= "<br>".sprintf(__("You may also used this : %s to replace an expression.",$this->pluginID), "<code>#REPLACE(word_to_find#word_to_replace#sentence)#</code>");
-				$comment .= "<br>".sprintf(__("You may also used this : %s to explode an expression according to a given delimiter and to keep the occurrence %s.",$this->pluginID), "<code>#EXPLODE(delimiter#sentence)(num)#</code>", "<code>delimiter</code>", "<code>num</code>" );
+				$comment .= "<br>".sprintf(__("You may also used this : %s to replace an expression.",$this->pluginID), "<code>#REPLACE(word_to_find##word_to_replace##sentence)#</code>");
+				$comment .= "<br>".sprintf(__("You may also used this : %s to explode an expression according to a given delimiter and to keep the occurrence %s.",$this->pluginID), "<code>#EXPLODE(delimiter##sentence)(num)#</code>", "<code>delimiter</code>", "<code>num</code>" );
 				$params->add_comment(sprintf(__('In this HTML you may use: %s',  $this->pluginID), $comment)) ; 
 				
 				$params->flush() ; 
+				
+				$content = "" ; 
+				foreach ($nb_match_regexp as $reg=>$nb) {
+					if ($reg=="normal") {
+						$content .= "<p>".sprintf(__('The default HTML for entries will be used for %s links',  $this->pluginID), $nb)."</p>" ; 
+					} else {
+						$content .= "<p>".sprintf(__('The HTML for entries with Custom Rule %s will be used for %s links',  $this->pluginID), "<code>".$reg."</code>", $nb)."</p>" ; 
+					}
+				}
+				
+				$box = new boxAdmin (__('Regular expression matching',  $this->pluginID), $content) ; 
+				echo $box->flush() ; 
+
+				
 				
 			$tabs->add_tab(__('Parameters',  $this->pluginID), ob_get_clean() , WP_PLUGIN_URL.'/'.str_replace(basename(__FILE__),"",plugin_basename(__FILE__))."core/img/tab_param.png") ; 	
 			

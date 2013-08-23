@@ -4,7 +4,7 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2013-04-07T13:45:13+00:00\n"
+"PO-Revision-Date: 2013-07-15T13:23:48+00:00\n"
 "Last-Translator: reitermarkus <me@reitermark.us>\n"
 "Last-Translator: ThorstenKallnischkies <http://desastre.eu>\n"
 "Last-Translator: blog.xmee.de <blog.xmee.de>\n"
@@ -14,6 +14,7 @@ msgstr ""
 "Last-Translator: FarChris <http://www.pinsight.de>\n"
 "Last-Translator: Calogero <kalle-mc@web.de>\n"
 "Last-Translator: ziix.de <ziix.de>\n"
+"Last-Translator: la <info@l-aschenbrenner.de>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -474,4 +475,19 @@ msgstr "Die Datei %s kann nicht umbenannt werden. Kontrollieren Sie die Rechte d
 
 msgid "The file %s cannot be modified. You should have a problem with file permissions or security restrictions."
 msgstr "Die Datei %s kann nicht geändert werden. Überprüfen Sie die Datei-Berechtigungen."
+
+msgid "Modify translations"
+msgstr "Übersetzungen bearbeiten"
+
+msgid "Send translation"
+msgstr "Übersetzung absenden"
+
+msgid "This plugin is available in %s languages."
+msgstr "Dieses Plugin ist in %s Sprachen verfügbar"
+
+msgid "There are %s sentences to be translated in this plugin."
+msgstr "%s Sätze müssen für dieses Plugin noch übersetzt werden."
+
+msgid "Add new"
+msgstr "Neues hinzufügen"
 

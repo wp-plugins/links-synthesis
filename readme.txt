@@ -55,6 +55,9 @@ Have fun !
 
 == Changelog ==
 
+= 1.0.6 = 
+* Regexp is improved and then changed to be more robust : WARNING you shoud update your regexp if you have one
+
 = 1.0.5 = 
 * It is now possible to use pseudo function REPLACE and EXPLODE
 
@@ -74,4 +77,4 @@ Have fun !
 == Frequently Asked Questions ==
 
  
-InfoVersion:3a7e4ffcb73f3d18de99e724aaed0acc
+InfoVersion:16117e8fda42651a175cea31ee8f5da5
