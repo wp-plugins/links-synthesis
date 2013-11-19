@@ -4,11 +4,12 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2013-06-15T12:54:58+00:00\n"
+"PO-Revision-Date: 2013-11-10T17:58:23+00:00\n"
 "Last-Translator: pablo <http://epablo.pl>\n"
 "Last-Translator: vyachek <vyachek@op.pl>\n"
 "Last-Translator: MarekMackiewicz <ickam89.com>\n"
 "Last-Translator: Albert221 <w.albert221@gmail.com>\n"
+"Last-Translator: Lukasz <orinek.info>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -64,12 +65,6 @@ msgstr "Jeżeli ta opcja jest odznaczona, panel tłumaczeń nie będzie się wy�
 
 msgid "Summary page for the plugins developped with the SL framework"
 msgstr "Wtyczki z rodziny SL"
-
-msgid "For now, you have installed %s plugins including %s plugins developped with the SedLex's framework"
-msgstr ""
-
-msgid "The core plugin is located at %s"
-msgstr ""
 
 msgid "Plugin name"
 msgstr "Nazwa wtyczki"
@@ -155,14 +150,11 @@ msgstr "Dodaj nowe tłumaczenie"
 msgid "Modifying the translation for this language: %s"
 msgstr "Edytujesz tłumaczenie na język %s"
 
-msgid "The number of occurrence of %s does not match in both string. Please note that the string %s will be replaced with a contextual string."
-msgstr ""
-
 msgid "Modify the translation files"
 msgstr "Wprowadź zmiany w plikach językowych"
 
 msgid "Modify translations"
-msgstr "Zmodyfikuj tłumaczenie"
+msgstr "Edycja tłumaczeń"
 
 msgid "%s sentences have been translated (i.e. %s)."
 msgstr "Przetłumaczono %s pól (czyli %s)"
@@ -206,17 +198,11 @@ msgstr "Jeśli nie chcesz stracić tłumaczeń przy aktualizacji wtyczki, zapisz
 msgid "Confirmation"
 msgstr "Potwierdzenie"
 
-msgid "Summary cached %s"
-msgstr ""
-
 msgid "The sentences used in this plugin are in English. Help the others users using the same language as you by translating this plugin."
 msgstr "Wtyczka jest w języku angielskim. Przetłumacz ją na swój język."
 
 msgid "This plugin is available in %s languages."
-msgstr "Wtyczka ma %s tłumaczeń"
-
-msgid "There are %s sentences to be translated in this plugin."
-msgstr ""
+msgstr "Znaleziono tłumaczenie w %s językach."
 
 msgid "Language"
 msgstr "Język"
@@ -244,12 +230,6 @@ msgstr "Dodaj"
 
 msgid "The 'SL framework' is a framework used for developping many plugins like this one. Thus, if you participate translating the framework, it will be very helpful for a bunch of plugins."
 msgstr "Platforma SL służy do rozwoju wielu  wtyczek podobnych do tej. Jeśli przetłumaczysz rdzeń SL wspomoże to rozwój tłumaczeń dla innych wtyczek z rodziny SL."
-
-msgid "There is %s languages supported for the 'SL framework'."
-msgstr ""
-
-msgid "There is %s sentence to be translated in the framework."
-msgstr ""
 
 msgid "Send to the author of the framework"
 msgstr "Wyślij autorowi platformy SL"
@@ -279,7 +259,7 @@ msgid "Here are the parameters of the framework. Modify them at will to fit your
 msgstr "Poniżej znajdują się parametry rdzenia SL. Edytuj je wedle potrzeb."
 
 msgid "(Delete)"
-msgstr "(Usuń)"
+msgstr "(usuń)"
 
 msgid "Values"
 msgstr "Wartości"
@@ -439,4 +419,10 @@ msgstr "Nie można zmienić nazwy pliku %s. Zapewne nie masz wystarczających up
 
 msgid "The file %s cannot be modified. You should have a problem with file permissions or security restrictions."
 msgstr "Nie można edytować pliku %s. Zapewne nie masz wystarczających uprawnień."
+
+msgid "The core plugin is located at %s"
+msgstr "Rdzeń wtyczki znajduje się w %s"
+
+msgid "For now, you have installed %s plugins including %s plugins developped with the SedLex's framework"
+msgstr "Masz zainstalowanych %s wtyczek, w tym %s wtyczek ze strukturą SedLex&#039;a"
 

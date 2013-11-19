@@ -6,7 +6,7 @@ Author URI: http://www.sedlex.fr/
 Plugin URI: http://wordpress.org/plugins/links-synthesis/
 Tags: tag
 Requires at least: 3.0
-Tested up to: 3.5
+Tested up to: 3.7.1
 Stable tag: trunk
 
 This plugin enables a synthesis of all links in an article and retrieves data from them. 
@@ -55,6 +55,9 @@ Have fun !
 
 == Changelog ==
 
+= 1.0.7 = 
+* Remove blank after the sup links
+
 = 1.0.6 = 
 * Regexp is improved and then changed to be more robust : WARNING you shoud update your regexp if you have one
 
@@ -77,4 +80,4 @@ Have fun !
 == Frequently Asked Questions ==
 
  
-InfoVersion:16117e8fda42651a175cea31ee8f5da5
+InfoVersion:1ce9ff2592bede54f0fb9ad291ef9871

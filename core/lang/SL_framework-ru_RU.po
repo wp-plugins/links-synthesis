@@ -4,13 +4,14 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2013-04-07T14:03:30+00:00\n"
+"PO-Revision-Date: 2013-10-05T13:35:01+00:00\n"
 "Last-Translator: Limych <http://khrolenok.ru/>\n"
 "Last-Translator: Pacifik <http://www.androiddeveloper.ru>\n"
 "Last-Translator: Slawka <http://eth0.org.ru>\n"
 "Last-Translator: alexmv <>\n"
 "Last-Translator: rad96 <rad@kontur.tk>\n"
 "Last-Translator: vyachek <vyachek@op.pl>\n"
+"Last-Translator: Copyright <http://belfast.by>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -31,39 +32,6 @@ msgstr "О программе..."
 msgid "Settings"
 msgstr "Настройки"
 
-msgid "Log options"
-msgstr ""
-
-msgid "What is the debug level:"
-msgstr ""
-
-msgid "See the debug logs"
-msgstr ""
-
-msgid "1=log only the critical errors;"
-msgstr ""
-
-msgid "2=log only the critical errors and the standard errors;"
-msgstr ""
-
-msgid "3=log only the critical errors, the standard errors and the warnings;"
-msgstr ""
-
-msgid "4=log information;"
-msgstr ""
-
-msgid "5=log verbose;"
-msgstr ""
-
-msgid "Multisite Management"
-msgstr ""
-
-msgid "Do you want to allow sub-blogs to modify the translations of the plugins:"
-msgstr ""
-
-msgid "If this option is unchecked, the translation tab won't be displayed in the blog administration panel."
-msgstr ""
-
 msgid "Summary page for the plugins developped with the SL framework"
 msgstr "Страница сводной информации для плагинов разработанных на основе фреймфорка SL"
 
@@ -75,9 +43,6 @@ msgstr "Название плагина"
 
 msgid "Description"
 msgstr "Описание"
-
-msgid "There is a SQL database for this plugin"
-msgstr ""
 
 msgid "Version: %s by %s"
 msgstr "Версия: %s от %s"
@@ -127,9 +92,6 @@ msgstr "Ошибка: представленные строка не совпа�
 msgid "Error: the submitted file can not be uploaded!"
 msgstr "Ошибка: представленные файл не может быть загружен!"
 
-msgid "Error: security issue!"
-msgstr ""
-
 msgid "Parameters"
 msgstr "Параметры"
 
@@ -154,9 +116,6 @@ msgstr "(Если вы хотите удалить этот файл, пожал
 msgid "Update"
 msgstr "Обновить"
 
-msgid "Reset to default values"
-msgstr ""
-
 msgid "Some parameters have not been updated due to errors (see below)!"
 msgstr "Некоторые параметры не были изменены по причине ошибки (смотри дальше)!"
 
@@ -165,18 +124,6 @@ msgstr "Параметры изменены (но с замечаниями)!"
 
 msgid "Parameters have been updated successfully!"
 msgstr "Параметры удачно изменены!"
-
-msgid "Parameters have been reset to their default values!"
-msgstr ""
-
-msgid "Here, you may configure three levels of translations: at the plugin level, at the framework level, and at the dashboard level."
-msgstr ""
-
-msgid "Please be informed that your current language is %s. Text will be translated if a translation is available."
-msgstr ""
-
-msgid "If you want to modify the language, please go in %s and find %s or %s. The second argument is your language and you may modify it as you want."
-msgstr ""
 
 msgid "Translations available for this plugin (i.e. %s)"
 msgstr "Для этого плагина доступен перевод (в.т.ч. %s)"
@@ -196,29 +143,14 @@ msgstr "Перевод"
 msgid "Your name:"
 msgstr "Ваше имя:"
 
-msgid "(if your name/pseudo is already in the list, there is no need to fill this input)"
-msgstr ""
-
 msgid "Your email or your website:"
 msgstr "Ваш email или адрес сайта:"
 
 msgid "Create the translation files"
 msgstr "Создать файлы перевода"
 
-msgid "Modifying the translation for this language: %s"
-msgstr ""
-
 msgid "Modify the translation files"
 msgstr "Изменить файлы перевода"
-
-msgid "The file %s cannot be extracted from mail attachments"
-msgstr ""
-
-msgid "The file %s cannot be written in the %s folder"
-msgstr ""
-
-msgid "The file %s has been imported in the %s folder"
-msgstr ""
 
 msgid "Plugin"
 msgstr "Плагин"
@@ -235,41 +167,11 @@ msgstr "%s слов/словосочетаний было переведено (
 msgid "Delete"
 msgstr "Удалить"
 
-msgid "See the new translation file and merge"
-msgstr ""
-
-msgid "%s sentences have been newly translated and %s sentences have been modified (the old file has %s translated sentences)."
-msgstr ""
-
-msgid "See the modifications/new translations and Merge"
-msgstr ""
-
-msgid "See the new translations and Merge"
-msgstr ""
-
 msgid "New translations are available"
 msgstr "Доступен новый перевод"
 
-msgid "Updates of translations are available"
-msgstr ""
-
-msgid "What are the differences between these two files?"
-msgstr ""
-
-msgid "Old sentence"
-msgstr ""
-
-msgid "New sentence"
-msgstr ""
-
 msgid "To replace?"
 msgstr "Заменить?"
-
-msgid "Merge"
-msgstr ""
-
-msgid "%s sentences have been translated (i.e. %s) %s %s sentences have to be checked because they are close (but not identical) to those to translate.%s"
-msgstr ""
 
 msgid "The translation %s have been sent"
 msgstr "перевод %s был отправлен"
@@ -279,9 +181,6 @@ msgstr "ошибка отправки электронной почты."
 
 msgid "Make sure that your wordpress is able to send email."
 msgstr "Убедитесь, что ваш WordPress может отправлять электронную почту."
-
-msgid "%s file cannot be created for %s as there is no translated sentence. Please, translate at least one sentence to create a file"
-msgstr ""
 
 msgid "%s file has been updated for %s"
 msgstr "файл %s была обновлена ​​как %s."
@@ -301,17 +200,8 @@ msgstr "Если вы не хотите потерять ваши перевод
 msgid "If you do not want to loose your translations on the next upgrading of this plugin, please save them on your hard disk before upgrading and then restore them after the upgrade !"
 msgstr "Если вы не хотите потерять ваши переводы на следующей модернизации этого плагина, пожалуйста, сохраните их на жестком диске перед обновлением, а затем восстановить их после обновления!"
 
-msgid "Summary cached %s"
-msgstr ""
-
-msgid "The sentences used in this plugin are in English. Help the others users using the same language as you by translating this plugin."
-msgstr ""
-
 msgid "This plugin is available in %d languages."
 msgstr "Этот плагин доступен в % переводах"
-
-msgid "There are %d sentences to be translated in this plugin."
-msgstr ""
 
 msgid "Ratio %"
 msgstr "Соотношение %"
@@ -349,15 +239,6 @@ msgstr "Есть еще %d слов/словосочитаний, которые
 msgid "Send to the author of the framework"
 msgstr "Отправить перевод автору SL framework."
 
-msgid "Donate"
-msgstr ""
-
-msgid "If you like the plugin, do not hesitate to donate. Please note that this plugin is developed in my spare time for free."
-msgstr ""
-
-msgid "This is not mandatory! but it may be a sign that this plugin fits you needs: it makes me happy..."
-msgstr ""
-
 msgid "Feedback form"
 msgstr "Обратная связь"
 
@@ -369,9 +250,6 @@ msgstr "Связаться с автором"
 
 msgid "Your email:"
 msgstr "Ваш e-mail:"
-
-msgid "Useful... so that the author will be able to anwser you."
-msgstr ""
 
 msgid "Your comments:"
 msgstr "Ваши комментарии:"
@@ -433,15 +311,6 @@ msgstr "Скачиваний:"
 msgid "Close popup"
 msgstr "Закрыть всплывающее окно"
 
-msgid "Filter: %s"
-msgstr ""
-
-msgid "%s of %s"
-msgstr ""
-
-msgid "Current Page"
-msgstr ""
-
 msgid "Error: %s function is not found"
 msgstr "Ошибка: %s функция не найдена"
 
@@ -454,12 +323,6 @@ msgstr "Папка %s не может быть открыта. У вас не д
 msgid "The file %s cannot be deleted. You should have a problem with file permissions or security restrictions."
 msgstr "Файл %s нельзя удалить. У вас не достаточно прав для этого."
 
-msgid "An other process is still running (it runs for %s seconds)"
-msgstr ""
-
-msgid "The file %s cannot be modified/created. You should have a problem with file permissions or security restrictions."
-msgstr ""
-
 msgid "The file %s cannot be created. You should have a problem with file permissions or security restrictions."
 msgstr "Файл %s нельзя переименовать. У вас не достаточно прав для этого."
 
@@ -471,4 +334,37 @@ msgstr "Файл %s нельзя переименовать. У вас не до
 
 msgid "The file %s cannot be modified. You should have a problem with file permissions or security restrictions."
 msgstr "Файл %s нельзя переименовать. У вас не достаточно прав для этого."
+
+msgid "Modifying the translation for this language: %s"
+msgstr "Редактировать перевод: %s"
+
+msgid "Modify translations"
+msgstr "Редактировать перевод"
+
+msgid "Send translation"
+msgstr "Отправить перевод"
+
+msgid "Confirmation"
+msgstr "Подтверждение"
+
+msgid "Summary cached %s"
+msgstr "Всего кэшировано: %s"
+
+msgid "This plugin is available in %s languages."
+msgstr "Этот плагин переведён на %s языков."
+
+msgid "Add new"
+msgstr "Добавить новый"
+
+msgid "Reset to default values"
+msgstr "Восстановить стандартные настройки"
+
+msgid "Parameters have been reset to their default values!"
+msgstr "Параметры успешно приведены к стандартным настройкам!"
+
+msgid "Current Page"
+msgstr "Текущая страница"
+
+msgid "Donate"
+msgstr "Пожертвовать"
 

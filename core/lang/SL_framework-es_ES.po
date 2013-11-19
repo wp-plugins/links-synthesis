@@ -4,11 +4,14 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2013-07-16T07:23:03+00:00\n"
+"PO-Revision-Date: 2013-10-10T15:16:31+00:00\n"
 "Last-Translator: IgnacioCalvo <http://ignaciocalvo.com>\n"
 "Last-Translator: Verto <vertofotografia.es>\n"
 "Last-Translator: SecurityNull <www.securitynull.net>\n"
 "Last-Translator: RUBEN <www.viemmant.com>\n"
+"Last-Translator: carlosalberto <carlosa@cubava.cu>\n"
+"Last-Translator: yorkel <>\n"
+"Last-Translator: Aresky <http://creandofuturo.cubava.cu>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -180,7 +183,7 @@ msgid "Make sure that your wordpress is able to send email."
 msgstr "Asegúrese de que wordpress es capaz de enviar correo electrónico."
 
 msgid "Send translation"
-msgstr "Enviar traducción"
+msgstr "enviar traduccion"
 
 msgid "%s file cannot be created for %s as there is no translated sentence. Please, translate at least one sentence to create a file"
 msgstr "No se puede crear el archivo %s para %s ya que no hay frases traducidas. Por favor, traducir al menos una frase para crear un archivo"
@@ -204,7 +207,7 @@ msgid "If you do not want to loose your translations on the next upgrading of th
 msgstr "Si usted no quiere perder sus traducciones en la próxima actualización de este plugin, por favor guárdelos en su disco duro antes de la actualizar y luego restaurelo después de la actualización"
 
 msgid "Confirmation"
-msgstr "Confirmación"
+msgstr "comfirmacio"
 
 msgid "Summary cached %s"
 msgstr "Resumen caché %s"
@@ -255,7 +258,7 @@ msgid "Send to the author of the framework"
 msgstr "Enviar al autor del framework"
 
 msgid "Add new"
-msgstr "Añadir nuevo"
+msgstr "añade nuevo"
 
 msgid "Error: the submitted value is not an integer and thus, the parameter has not been updated!"
 msgstr "Error: El valor enviado no es un número entero y por lo tanto, el parámetro no ha sido actualizado"
@@ -279,7 +282,7 @@ msgid "Here are the parameters of the framework. Modify them at will to fit your
 msgstr "Estos son los parámetros del marco. Modifiquelos a su conveniencia para satisfacer sus necesidades."
 
 msgid "(Delete)"
-msgstr "(Eliminar)"
+msgstr "Borrar"
 
 msgid "Values"
 msgstr "Valores"

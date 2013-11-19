@@ -3,7 +3,7 @@
 Plugin Name: Links synthesis
 Plugin Tag: tag
 Description: <p>This plugin enables a synthesis of all links in an article and retrieves data from them. </p><p>In this plugin, an index of all links in the page/post is created at the end of the page/post. </p><p>In addition, each link is periodically check to see if the link is still valid. </p><p>Finally, you may customize the display of each link thanks to metatag and headers.</p><p>This plugin is under GPL licence. </p>
-Version: 1.0.6
+Version: 1.0.7
 
 Framework: SL_Framework
 Author: sedLex
@@ -530,9 +530,9 @@ class links_synthesis extends pluginSedLex {
   		
   		if (($toBeDisplayed) && ( ($this->get_param('display')) || ( ($this->get_param('display_admin'))&&(is_user_logged_in()) ) )) {
   			if (($this->get_param('display_error_admin'))&&(is_user_logged_in())) {
-  				return $matches[0]."<sup class='synthesis_sup'><a href='#links_ref".$this->table_links[md5($matches[2])]["num"]."'>".$this->table_links[md5($matches[2])]["num"]."</a></sup> ".$this->table_links[md5($matches[2])]["status"] ; 
+  				return $matches[0]."<sup class='synthesis_sup'><a href='#links_ref".$this->table_links[md5($matches[2])]["num"]."'>".$this->table_links[md5($matches[2])]["num"]."</a></sup>".$this->table_links[md5($matches[2])]["status"] ; 
   			} else {
-  				return $matches[0]."<sup class='synthesis_sup'><a href='#links_ref".$this->table_links[md5($matches[2])]["num"]."'>".$this->table_links[md5($matches[2])]["num"]."</a></sup> " ; 
+  				return $matches[0]."<sup class='synthesis_sup'><a href='#links_ref".$this->table_links[md5($matches[2])]["num"]."'>".$this->table_links[md5($matches[2])]["num"]."</a></sup>" ; 
   			}
   		} else {
   			return $matches[0] ; 
