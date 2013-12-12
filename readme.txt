@@ -55,6 +55,9 @@ Have fun !
 
 == Changelog ==
 
+= 1.0.8 = 
+* Exclude links that are added by plugins
+
 = 1.0.7 = 
 * Remove blank after the sup links
 
@@ -80,4 +83,4 @@ Have fun !
 == Frequently Asked Questions ==
 
  
-InfoVersion:1ce9ff2592bede54f0fb9ad291ef9871
+InfoVersion:b4dc25ef09082988444014cb264bb7d2

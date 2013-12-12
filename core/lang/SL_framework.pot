@@ -724,9 +724,9 @@ msgstr ""
 #: include/zip.class.php:820
 #: include/zip.class.php:822
 #: include/zip.class.php:829
-#: include/database.class.php:173
-#: include/database.class.php:224
-#: include/database.class.php:227
+#: include/database.class.php:210
+#: include/database.class.php:231
+#: include/database.class.php:234
 #@ SL_framework
 msgid "The file %s cannot be deleted. You should have a problem with file permissions or security restrictions."
 msgstr ""
@@ -751,8 +751,8 @@ msgstr ""
 #: include/zip.class.php:760
 #: include/zip.class.php:776
 #: include/database.class.php:104
-#: include/database.class.php:169
-#: include/database.class.php:220
+#: include/database.class.php:206
+#: include/database.class.php:227
 #@ SL_framework
 msgid "The file %s cannot be modified/created. You should have a problem with file permissions or security restrictions."
 msgstr ""
@@ -774,7 +774,7 @@ msgstr ""
 msgid "The file %s cannot be renamed. You should have a problem with file permissions or security restrictions."
 msgstr ""
 
-#: include/database.class.php:165
+#: include/database.class.php:197
 #@ SL_framework
 msgid "The file %s cannot be modified. You should have a problem with file permissions or security restrictions."
 msgstr ""

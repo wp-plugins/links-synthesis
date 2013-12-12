@@ -785,7 +785,7 @@ if (!class_exists("translationSL")) {
 				if ($isEmailAuthor=="true") {
 					$url_to_send  ="<a href='#' onclick='send_trans(\"".$plugin."\",\"".$domain."\", \"".$isFramework."\", \"".$lang."\")'>" ; 
 					$url_to_send2  ="</a>" ; 
-					echo "<p><img src='".plugin_dir_url("/")."/".$plugin."/core/img/info.png'/>".sprintf(__("If you do not want to loose your translations on the next upgrading of this plugin, it is recommended to send the translation files to the author by clicking %s here %s !", 'SL_framework'), $url_to_send, $url_to_send2)."</p>";
+					echo "<p><span class='tobehiddenOnSent'><img src='".plugin_dir_url("/")."/".$plugin."/core/img/info.png'/>".sprintf(__("If you do not want to loose your translations on the next upgrading of this plugin, it is recommended to send the translation files to the author by clicking %s here %s !", 'SL_framework'), $url_to_send, $url_to_send2)."</span></p>";
 				} else {
 					echo "<p><img src='".plugin_dir_url("/")."/".$plugin."/core/img/warning.png'/>".__("If you do not want to loose your translations on the next upgrading of this plugin, please save them on your hard disk before upgrading and then restore them after the upgrade !", 'SL_framework')."</p>";
 				}
@@ -1112,7 +1112,7 @@ if (!class_exists("translationSL")) {
 							$signature_files .= $domain."-".$f.".mo".filesize($path."/lang/".$domain."-".$f.".mo");
 							$cel_lang->add_action(__('Modify','SL_framework'), "modify_trans('".$plugin_lien."','".$domain."', 'false', '".$f."')" ) ; 
 							if (($isEmailAuthor=="true") && (strlen($nameTranslator)>3) && (strpos($info['translators'], $nameTranslator)>0)) {
-								$cel_lang->add_action(__('Send to the author of the plugin','SL_framework'), "send_trans(\"".$plugin_lien."\",\"".$domain."\", \"false\", \"".$f."\")") ; 
+								$cel_lang->add_action("<span class='tobehiddenOnSent'>".__('Send to the author of the plugin','SL_framework')."</span>", "send_trans(\"".$plugin_lien."\",\"".$domain."\", \"false\", \"".$f."\")") ; 
 							}
 						}
 						if ($f!="en_US") {
@@ -1421,7 +1421,7 @@ if (!class_exists("translationSL")) {
 							$signature_files .= "SL_framework-".$f.".mo".filesize($path."/core/lang/SL_framework-".$f.".mo") ; 
 							$cel_lang->add_action(__('Modify','SL_framework'), "modify_trans('".$plugin_lien."','".$domain."', '".$plugin_frame."', '".$f."')" ) ; 
 							if (($isEmailAuthor=="true") && (strlen($nameTranslator)>3) && (strpos($info['translators'], $nameTranslator)>0)) {
-								$cel_lang->add_action(__('Send to the author of the framework','SL_framework'), "send_trans('".$plugin_lien."','".$domain."', '".$plugin_frame."' , \"".$f."\")") ; 
+								$cel_lang->add_action("<span class='tobehiddenOnSent'>".__('Send to the author of the framework','SL_framework')."</span>", "send_trans('".$plugin_lien."','".$domain."', '".$plugin_frame."' , \"".$f."\")") ; 
 							}
 						}
 						if ($f!="en_US") {

@@ -3,7 +3,7 @@
 Plugin Name: Links synthesis
 Plugin Tag: tag
 Description: <p>This plugin enables a synthesis of all links in an article and retrieves data from them. </p><p>In this plugin, an index of all links in the page/post is created at the end of the page/post. </p><p>In addition, each link is periodically check to see if the link is still valid. </p><p>Finally, you may customize the display of each link thanks to metatag and headers.</p><p>This plugin is under GPL licence. </p>
-Version: 1.0.7
+Version: 1.0.8
 
 Framework: SL_Framework
 Author: sedLex
@@ -235,7 +235,7 @@ class links_synthesis extends pluginSedLex {
 	function _modify_content($content, $type, $excerpt) {	
 		global $post ; 
 		global $wpdb ; 
-
+		
 		// We check whether there is an exclusion
 		$exclu = $this->get_param('exclu') ;
 		$exclu = explode("\n", $exclu) ;
@@ -264,7 +264,7 @@ class links_synthesis extends pluginSedLex {
 				}
 				$truc="" ; 
 				
-				// We search for the corect display
+				// We search for the correct display
 				$regexps = $this->get_param_macro('custom_regexp') ; 
 				$entries = $this->get_param_macro('custom_display') ; 
 				for ($i=0 ; $i<count($regexps) ; $i++) {
@@ -477,6 +477,13 @@ class links_synthesis extends pluginSedLex {
   		
   		// comme d'habitude : $matches[0] represente la valeur totale
   		// $matches[1] represente la première parenthèse capturante
+		
+		$true_content = $post->post_content ; 
+		
+		// si non pr�sent dans le post initial, on ne fait rien
+		if (strpos($true_content, $matches[2])===false) {
+  			return $matches[0] ; 
+  		}
   		
   		// si image on ne fait rien
   		if (preg_match("/<img/iesU", $matches[4])) {
