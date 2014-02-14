@@ -4,12 +4,13 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2013-11-10T17:58:23+00:00\n"
+"PO-Revision-Date: 2014-01-19T19:13:05+00:00\n"
 "Last-Translator: pablo <http://epablo.pl>\n"
 "Last-Translator: vyachek <vyachek@op.pl>\n"
 "Last-Translator: MarekMackiewicz <ickam89.com>\n"
 "Last-Translator: Albert221 <w.albert221@gmail.com>\n"
 "Last-Translator: Lukasz <orinek.info>\n"
+"Last-Translator: krzysiek <krzysztoftrojanek.pl>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -154,7 +155,7 @@ msgid "Modify the translation files"
 msgstr "Wprowadź zmiany w plikach językowych"
 
 msgid "Modify translations"
-msgstr "Edycja tłumaczeń"
+msgstr "Zmień tłumaczenie"
 
 msgid "%s sentences have been translated (i.e. %s)."
 msgstr "Przetłumaczono %s pól (czyli %s)"
@@ -235,7 +236,7 @@ msgid "Send to the author of the framework"
 msgstr "Wyślij autorowi platformy SL"
 
 msgid "Add new"
-msgstr "Dodaj nowe"
+msgstr "Dodaj nowy"
 
 msgid "Error: the submitted value is not an integer and thus, the parameter has not been updated!"
 msgstr "Błąd: Podana wartość nie jest liczbą całkowitą. Zmiany nie zostały zapisane!"
@@ -259,7 +260,7 @@ msgid "Here are the parameters of the framework. Modify them at will to fit your
 msgstr "Poniżej znajdują się parametry rdzenia SL. Edytuj je wedle potrzeb."
 
 msgid "(Delete)"
-msgstr "(usuń)"
+msgstr "(Usuń)"
 
 msgid "Values"
 msgstr "Wartości"
@@ -424,5 +425,8 @@ msgid "The core plugin is located at %s"
 msgstr "Rdzeń wtyczki znajduje się w %s"
 
 msgid "For now, you have installed %s plugins including %s plugins developped with the SedLex's framework"
-msgstr "Masz zainstalowanych %s wtyczek, w tym %s wtyczek ze strukturą SedLex&#039;a"
+msgstr "Jak dotąd zainstalowano %s wtyczek, w tym %s utworzonych przez SedLex"
+
+msgid "There are %s sentences to be translated in this plugin."
+msgstr "W tej wtyczce jest %s pól do przetłumaczenia."
 

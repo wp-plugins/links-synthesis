@@ -4,7 +4,7 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2013-08-09T21:10:54+00:00\n"
+"PO-Revision-Date: 2014-01-11T18:00:36+00:00\n"
 "Last-Translator: SedLex <http://www.sedlex.fr/>\n"
 "Last-Translator: PierreF <pf@romanliturgy.org>\n"
 "Last-Translator: wkpixearts <wkpixeartsforall@gmail.com>\n"
@@ -118,6 +118,162 @@ msgstr "Il y a des problèmes avec les droits des répertoires. Merci de les cor
 msgid "Please see below:"
 msgstr "Merci de voir ci-dessous :"
 
+msgid "Filter: %s"
+msgstr "Filtre : %s"
+
+msgid "%s of %s"
+msgstr "%s de %s"
+
+msgid "Current Page"
+msgstr "Page actuelle"
+
+msgid "Donate"
+msgstr "Faire un don"
+
+msgid "If you like the plugin, do not hesitate to donate. Please note that this plugin is developed in my spare time for free."
+msgstr "Si vous aimez le plugin, n&#039;hésitez pas à faire un don. Veuillez noter que ce plugin est développé dans mon temps libre pour libre."
+
+msgid "This is not mandatory! but it may be a sign that this plugin fits you needs: it makes me happy..."
+msgstr "Ce n&#039;est pas obligatoire! mais il peut être un signe que ce plug-in s&#039;intègre vos besoins: cela me rend heureuse ..."
+
+msgid "Feedback form"
+msgstr "Formulaire de feedback"
+
+msgid "This form is an easy way to contact the author and to discuss issues/incompatibilities/etc. with him"
+msgstr "Ce formulaire est un moyen simple de contacter l&#039;auteur afin de discuter avec lui de vos problèmes, des incompatibilités rencontrées, etc."
+
+msgid "Contact the author"
+msgstr "Contact de l&#039;auteur"
+
+msgid "Your name:"
+msgstr "Votre nom :"
+
+msgid "Your email:"
+msgstr "Votre email :"
+
+msgid "Useful... so that the author will be able to anwser you."
+msgstr "Utile ... ainsi l&#039;auteur pourra vous répondre."
+
+msgid "Your comments:"
+msgstr "Vos commentaires :"
+
+msgid "Please note that additional information on your wordpress installation will be sent to the author in order to help the debugging if needed (such as : the wordpress version, the installed plugins, etc.)"
+msgstr "Merci de noter que des informations complémentaires relatives à votre installation de wordpress seront envoyées à l&#039;auteur afin d&#039;aider la correction des erreurs(comme la version de wordpress, la liste des plugins installés, etc.)"
+
+msgid "Send feedback"
+msgstr "Envoyer vos commentaires"
+
+msgid "No email have been provided for the author of this plugin. Therefore, the feedback is impossible"
+msgstr "Aucun email n&#039;a été communiqué par l&#039;auteur de ce plugin. Aucun feedback n&#039;est donc possible."
+
+msgid "The feedback has been sent"
+msgstr "Le feedback a été envoyé"
+
+msgid "An error occured sending the email."
+msgstr "Une erreur est survenue lors de l&#039;envoi du mail"
+
+msgid "Make sure that your wordpress is able to send email."
+msgstr "Verifier que votre wordpress est en capacité d&#039;envoyer des mails"
+
+msgid "Plugins that you may install"
+msgstr "Les plugins que vous pouvez installer"
+
+msgid "The following plugins have been developed by the author and are not yet installed:"
+msgstr "Les plugins suivants ont été développé par l&#039;auteur et vous ne les avez pas encore installés :"
+
+msgid "Plugin not yet installed"
+msgstr "Les plugins non encore installés"
+
+msgid "Description and Screenshots"
+msgstr "Description et captures d&#039;écran"
+
+msgid "All author's plugins have been installed. Thank you!"
+msgstr "Tous les plugins de l&#039;auteur ont été installé. Merci à vous !"
+
+msgid "Installed plugins"
+msgstr "Plugins installés"
+
+msgid "You have already installed the following author's plugins:"
+msgstr "Vous avez installés les plugins suivants de l&#039;auteur :"
+
+msgid "Plugin already installed"
+msgstr "Plugins déjà installés"
+
+msgid "The Wordpress page: %s"
+msgstr "La page Wordpress : %s"
+
+msgid "An Unexpected HTTP Error occurred during the API request."
+msgstr "Une erreur HTTP inattendue est survenue durant la requête API."
+
+msgid "Last update:"
+msgstr "Dernière mise à jour :"
+
+msgid "Rating: %s"
+msgstr "Evaluation : %s"
+
+msgid "by %s persons"
+msgstr "par %s personnes"
+
+msgid "Number of download:"
+msgstr "Nombre de téléchargement :"
+
+msgid "Add new"
+msgstr ""
+
+msgid "Error: the submitted value is not an integer and thus, the parameter has not been updated!"
+msgstr "Erreur : la valeur soumises n&#039;est pas un entier, la valeur du paramètre n&#039;est donc pas mise à jour"
+
+msgid "Error: the submitted string does not match the constrains"
+msgstr "Erreur : la chaine de caractère soumise ne respecte pas les contraines imposées"
+
+msgid "Error: the submitted file can not be uploaded!"
+msgstr "Erreur : le fichier soumis ne peut pas être enregistré !"
+
+msgid "Error: security issue!"
+msgstr "Erreur: problème de sécurité!"
+
+msgid "Parameters"
+msgstr "Paramètres"
+
+msgid "Here are the parameters of the plugin. Modify them at will to fit your needs."
+msgstr "Voici les paramètres du plugin. Modifier les afin de satisfaire vos besoins."
+
+msgid "Here are the parameters of the framework. Modify them at will to fit your needs."
+msgstr "Voici les paramètres du framework. Modifier les afin de satisfaire vos besoins."
+
+msgid "(Delete)"
+msgstr "Effacer"
+
+msgid "Values"
+msgstr "Valeurs"
+
+msgid "Warning: some characters have been removed because they are not allowed here"
+msgstr "Attention : certains caractères ont été supprimés car ils ne sont pas autorisés ici"
+
+msgid "(integer)"
+msgstr "(entier)"
+
+msgid "(If you want to delete this file, please check this box %s)"
+msgstr "(Si vous voulez effacer ce fichier, merci de cocher cette case %s)"
+
+msgid "Update"
+msgstr "Mise à jour"
+
+msgid "Reset to default values"
+msgstr "Réinitialisation des valeurs par défaut"
+
+msgid "Some parameters have not been updated due to errors (see below)!"
+msgstr "Certains paramètres n&#039;ont pas été mis à jour à cause d&#039;erreurs (voir ci-dessous) !"
+
+msgid "Parameters have been updated (but with some warnings)!"
+msgstr "Les paramètres ont été mis à jour (mais il existe des avertissements) !"
+
+msgid "Parameters have been updated successfully!"
+msgstr "Les paramètres ont été mis à jour avec succès !"
+
+msgid "Parameters have been reset to their default values!"
+msgstr "Les paramètres ont été réinitialisés avec leur valeur par défaut"
+
 msgid "Close popup"
 msgstr "Fermer le popup"
 
@@ -145,9 +301,6 @@ msgstr "Phrase à traduire"
 msgid "Translation"
 msgstr "Traduction"
 
-msgid "Your name:"
-msgstr "Votre nom :"
-
 msgid "(if your name/pseudo is already in the list, there is no need to fill this input)"
 msgstr "(si votre nom/pseudo est déja dans la liste, il n&#039;est pas nécessiare de remplir ce champ)"
 
@@ -161,7 +314,7 @@ msgid "Add a new translation"
 msgstr "Ajouter une nouvelle traduction"
 
 msgid "Modifying the translation for this language: %s"
-msgstr "Modifier la traductions pour cette langue : %s"
+msgstr "Modifier la traduction pour cette langue : %s"
 
 msgid "The number of occurrence of %s does not match in both string. Please note that the string %s will be replaced with a contextual string."
 msgstr ""
@@ -180,12 +333,6 @@ msgstr "%s phrases ont été traduites (c&#039;est à dire %s) %s %s phrases doi
 
 msgid "The translation %s have been sent"
 msgstr "La traduction %s a été envoyée"
-
-msgid "An error occured sending the email."
-msgstr "Une erreur est survenue lors de l&#039;envoi du mail"
-
-msgid "Make sure that your wordpress is able to send email."
-msgstr "Verifier que votre wordpress est en capacité d&#039;envoyer des mails"
 
 msgid "Send translation"
 msgstr "Envoyer la traduction"
@@ -262,153 +409,6 @@ msgstr ""
 msgid "Send to the author of the framework"
 msgstr "Envoyer à l&#039;auteur du framework"
 
-msgid "Add new"
-msgstr ""
-
-msgid "Error: the submitted value is not an integer and thus, the parameter has not been updated!"
-msgstr "Erreur : la valeur soumises n&#039;est pas un entier, la valeur du paramètre n&#039;est donc pas mise à jour"
-
-msgid "Error: the submitted string does not match the constrains"
-msgstr "Erreur : la chaine de caractère soumise ne respecte pas les contraines imposées"
-
-msgid "Error: the submitted file can not be uploaded!"
-msgstr "Erreur : le fichier soumis ne peut pas être enregistré !"
-
-msgid "Error: security issue!"
-msgstr "Erreur: problème de sécurité!"
-
-msgid "Parameters"
-msgstr "Paramètres"
-
-msgid "Here are the parameters of the plugin. Modify them at will to fit your needs."
-msgstr "Voici les paramètres du plugin. Modifier les afin de satisfaire vos besoins."
-
-msgid "Here are the parameters of the framework. Modify them at will to fit your needs."
-msgstr "Voici les paramètres du framework. Modifier les afin de satisfaire vos besoins."
-
-msgid "(Delete)"
-msgstr "Effancer"
-
-msgid "Values"
-msgstr "Valeurs"
-
-msgid "Warning: some characters have been removed because they are not allowed here"
-msgstr "Attention : certains caractères ont été supprimés car ils ne sont pas autorisés ici"
-
-msgid "(integer)"
-msgstr "(entier)"
-
-msgid "(If you want to delete this file, please check this box %s)"
-msgstr "(Si vous voulez effacer ce fichier, merci de cocher cette case %s)"
-
-msgid "Update"
-msgstr "Mise à jour"
-
-msgid "Reset to default values"
-msgstr "Réinitialisation des valeurs par défaut"
-
-msgid "Some parameters have not been updated due to errors (see below)!"
-msgstr "Certains paramètres n&#039;ont pas été mis à jour à cause d&#039;erreurs (voir ci-dessous) !"
-
-msgid "Parameters have been updated (but with some warnings)!"
-msgstr "Les paramètres ont été mis à jour (mais il existe des avertissements) !"
-
-msgid "Parameters have been updated successfully!"
-msgstr "Les paramètres ont été mis à jour avec succès !"
-
-msgid "Parameters have been reset to their default values!"
-msgstr "Les paramètres ont été réinitialisés avec leur valeur par défaut"
-
-msgid "Plugins that you may install"
-msgstr "Les plugins que vous pouvez installer"
-
-msgid "The following plugins have been developed by the author and are not yet installed:"
-msgstr "Les plugins suivants ont été développé par l&#039;auteur et vous ne les avez pas encore installés :"
-
-msgid "Plugin not yet installed"
-msgstr "Les plugins non encore installés"
-
-msgid "Description and Screenshots"
-msgstr "Description et captures d&#039;écran"
-
-msgid "All author's plugins have been installed. Thank you!"
-msgstr "Tous les plugins de l&#039;auteur ont été installé. Merci à vous !"
-
-msgid "Installed plugins"
-msgstr "Plugins installés"
-
-msgid "You have already installed the following author's plugins:"
-msgstr "Vous avez installés les plugins suivants de l&#039;auteur :"
-
-msgid "Plugin already installed"
-msgstr "Plugins déjà installés"
-
-msgid "The Wordpress page: %s"
-msgstr "La page Wordpress : %s"
-
-msgid "An Unexpected HTTP Error occurred during the API request."
-msgstr "Une erreur HTTP inattendue est survenue durant la requête API."
-
-msgid "Last update:"
-msgstr "Dernière mise à jour :"
-
-msgid "Rating: %s"
-msgstr "Evaluation : %s"
-
-msgid "by %s persons"
-msgstr "par %s personnes"
-
-msgid "Number of download:"
-msgstr "Nombre de téléchargement :"
-
-msgid "Filter: %s"
-msgstr "Filtre : %s"
-
-msgid "%s of %s"
-msgstr "%s de %s"
-
-msgid "Current Page"
-msgstr "Page actuelle"
-
-msgid "Donate"
-msgstr "Faire un don"
-
-msgid "If you like the plugin, do not hesitate to donate. Please note that this plugin is developed in my spare time for free."
-msgstr "Si vous aimez le plugin, n&#039;hésitez pas à faire un don. Veuillez noter que ce plugin est développé dans mon temps libre pour libre."
-
-msgid "This is not mandatory! but it may be a sign that this plugin fits you needs: it makes me happy..."
-msgstr "Ce n&#039;est pas obligatoire! mais il peut être un signe que ce plug-in s&#039;intègre vos besoins: cela me rend heureuse ..."
-
-msgid "Feedback form"
-msgstr "Formulaire de feedback"
-
-msgid "This form is an easy way to contact the author and to discuss issues/incompatibilities/etc. with him"
-msgstr "Ce formulaire est un moyen simple de contacter l&#039;auteur afin de discuter avec lui de vos problèmes, des incompatibilités rencontrées, etc."
-
-msgid "Contact the author"
-msgstr "Contact de l&#039;auteur"
-
-msgid "Your email:"
-msgstr "Votre email :"
-
-msgid "Useful... so that the author will be able to anwser you."
-msgstr "Utile ... ainsi l&#039;auteur pourra vous répondre."
-
-msgid "Your comments:"
-msgstr "Vos commentaires :"
-
-msgid "Please note that additional information on your wordpress installation will be sent to the author in order to help the debugging if needed (such as : the wordpress version, the installed plugins, etc.)"
-msgstr "Merci de noter que des informations complémentaires relatives à votre installation de wordpress seront envoyées à l&#039;auteur afin d&#039;aider la correction des erreurs(comme la version de wordpress, la liste des plugins installés, etc.)"
-
-msgid "Send feedback"
-msgstr "Envoyer vos commentaires"
-
-msgid "No email have been provided for the author of this plugin. Therefore, the feedback is impossible"
-msgstr "Aucun email n&#039;a été communiqué par l&#039;auteur de ce plugin. Aucun feedback n&#039;est donc possible."
-
-msgid "The feedback has been sent"
-msgstr "Le feedback a été envoyé"
-
 msgid "KB"
 msgstr "Ko"
 
@@ -418,17 +418,8 @@ msgstr "Mo"
 msgid "GB"
 msgstr "Go"
 
-msgid "Error: %s function is not found"
-msgstr "Erreur : la fonction %s n&#039;est pas trouvée"
-
 msgid "The file %s cannot be read. You should have a problem with file permissions or security restrictions."
 msgstr "Le fichier %s ne peut pas être lu. Vous avez probablement un problème de droit sur ce fichier et des restrictions de sécurité."
-
-msgid "The folder %s cannot be opened. You should have a problem with folder permissions or security restrictions."
-msgstr "Le répertoire %s ne peut pas être ouvert. Vous avez probablement un problème de droit sur ce répertoire et des restrictions de sécurité."
-
-msgid "The file %s cannot be deleted. You should have a problem with file permissions or security restrictions."
-msgstr "Le fichier %s ne peut pas être effacé. Vous avez probablement un problème de droit sur ce fichier et des restrictions de sécurité."
 
 msgid "An other process is still running (it runs for %s seconds)"
 msgstr "Un autre processus est en cours d&#039;exécution (il tourne depuis %s seconds)"
@@ -439,12 +430,21 @@ msgstr "Le fichier %s ne peut pas être modifié/créé. Vous avez probablement 
 msgid "The file %s cannot be created. You should have a problem with file permissions or security restrictions."
 msgstr "Le fichier %s ne peut pas être créé. Vous avez probablement un problème de droit sur ce fichier et des restrictions de sécurité."
 
+msgid "The file %s cannot be modified. You should have a problem with file permissions or security restrictions."
+msgstr "Le fichier %s ne peut pas être modifié. Vous avez probablement un problème de droit sur ce fichier et des restrictions de sécurité."
+
+msgid "The file %s cannot be deleted. You should have a problem with file permissions or security restrictions."
+msgstr "Le fichier %s ne peut pas être effacé. Vous avez probablement un problème de droit sur ce fichier et des restrictions de sécurité."
+
+msgid "Error: %s function is not found"
+msgstr "Erreur : la fonction %s n&#039;est pas trouvée"
+
+msgid "The folder %s cannot be opened. You should have a problem with folder permissions or security restrictions."
+msgstr "Le répertoire %s ne peut pas être ouvert. Vous avez probablement un problème de droit sur ce répertoire et des restrictions de sécurité."
+
 msgid "The file %s cannot be compressed."
 msgstr "Le fichier %s ne peut pas être compressé."
 
 msgid "The file %s cannot be renamed. You should have a problem with file permissions or security restrictions."
 msgstr "Le fichier %s ne peut pas être renommé. Vous avez probablement un problème de droit sur ce fichier et des restrictions de sécurité."
-
-msgid "The file %s cannot be modified. You should have a problem with file permissions or security restrictions."
-msgstr "Le fichier %s ne peut pas être modifié. Vous avez probablement un problème de droit sur ce fichier et des restrictions de sécurité."
 

@@ -3,7 +3,7 @@
 Plugin Name: Links synthesis
 Plugin Tag: tag
 Description: <p>This plugin enables a synthesis of all links in an article and retrieves data from them. </p><p>In this plugin, an index of all links in the page/post is created at the end of the page/post. </p><p>In addition, each link is periodically check to see if the link is still valid. </p><p>Finally, you may customize the display of each link thanks to metatag and headers.</p><p>This plugin is under GPL licence. </p>
-Version: 1.0.8
+Version: 1.0.9
 
 Framework: SL_Framework
 Author: sedLex
@@ -480,7 +480,12 @@ class links_synthesis extends pluginSedLex {
 		
 		$true_content = $post->post_content ; 
 		
+		if ($matches[2]=="") {
+			return $matches[0] ; 
+		}
+		
 		// si non présent dans le post initial, on ne fait rien
+
 		if (strpos($true_content, $matches[2])===false) {
   			return $matches[0] ; 
   		}
