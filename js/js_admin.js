@@ -68,3 +68,38 @@ function changeURL(oldURL, newURL, idPost) {
 		}
 	});   
 }
+
+function forceAnalysisLS() {
+	jQuery('#forceAnalysisLS').attr('disabled', 'disabled');
+	jQuery('#stopAnalysisLS').removeAttr('disabled');
+	jQuery('#wait_analysisLS').show() ;
+	var arguments = {
+		action: 'forceAnalysisLinks'
+	} 
+	jQuery.post(ajaxurl, arguments, function(response) {
+		if ((""+response+ "").indexOf("PROGRESS POSTS - ") !=-1) {
+			if (jQuery('#forceAnalysisLS').is(":disabled")) {
+				jQuery('#table_links_synthesis').html(response) ;
+				forceAnalysisLS() ; 
+			}
+		} else {
+			jQuery('#forceAnalysisLS').removeAttr('disabled');
+			jQuery('#stopAnalysisLS').attr('disabled', 'disabled');
+			jQuery('#table_links_synthesis').html(response) ;
+			jQuery('#wait_analysisLS').hide() ;
+		}
+	});
+}
+
+function stopAnalysisLS() {
+	jQuery('#forceAnalysisLS').removeAttr('disabled');
+	jQuery('#stopAnalysisLS').attr('disabled', 'disabled');
+	jQuery('#wait_analysisLS').hide() ;
+	
+	var arguments = {
+		action: 'stopAnalysisLinks'
+	} 
+	jQuery.post(ajaxurl, arguments, function(response) {
+		// nothing
+	});
+}

@@ -59,6 +59,9 @@ Have fun !
 
 == Changelog ==
 
+= 1.1.2 = 
+* NEW: Add a new feature to force the verification of all links and all page (for low traffic website)
+
 = 1.1.1 = 
 * NEW: Delete old links when a page has been deleted
 
@@ -80,4 +83,4 @@ Have fun !
 == Frequently Asked Questions ==
 
  
-InfoVersion:7df2a465b6b93f8c7dcce88c106dc44d
+InfoVersion:7e4871985d8929686f7f80f8f4e13505
