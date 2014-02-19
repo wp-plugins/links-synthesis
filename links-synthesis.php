@@ -3,7 +3,7 @@
 Plugin Name: Links synthesis
 Plugin Tag: tag
 Description: <p>This plugin enables a synthesis of all links in an article and retrieves data from them. </p><p>In this plugin, an index of all links in the page/post is created at the end of the page/post. </p><p>In addition, each link is periodically check to see if the link is still valid. </p><p>Finally, you may customize the display of each link thanks to metatag and headers.</p><p>This plugin is under GPL licence. </p>
-Version: 1.1.0
+Version: 1.1.1
 
 
 Framework: SL_Framework
@@ -716,7 +716,7 @@ p.links_synthesis_entry {
 		global $blog_id ; 
 		
 		SL_Debug::log(get_class(), "Print the configuration page." , 4) ; 
-		
+				
 		?>
 		<div class="wrap">
 			<div id="icon-themes" class="icon32"><br></div>
@@ -777,8 +777,13 @@ p.links_synthesis_entry {
 								if (is_array($m)) {
 									$postId = intval(str_replace("selectPostWithID", "", $m['id'])) ;
 									$occurrence_array .= $postId."," ; 
-									$postpost = get_post($postId) ; 
-									$occurrence .= "<p style='font-size:70%'>".sprintf(__("%s in page %s (%s occurrences)", $this->pluginID), "<span style='font-size:135%'>".$m['text']."</span>", "<a href='".get_permalink($postId)."'>".$postpost->post_title."</a>", $m['nb'])."</p>" ; 
+									$postpost = get_post($postId) ;
+									if (!is_null($postpost)) {
+										$postpost_post_title = $postpost->post_title ; 
+									} else {
+										$postpost_post_title = __("(Missing page)",$this->pluginID) ; 
+									}
+									$occurrence .= "<p style='font-size:70%'>".sprintf(__("%s in page %s (%s occurrences)", $this->pluginID), "<span style='font-size:135%'>".$m['text']."</span>", "<a href='".get_permalink($postId)."'>".$postpost_post_title."</a>", $m['nb'])."</p>" ; 
 								}
 							}
 						}
@@ -943,7 +948,12 @@ p.links_synthesis_entry {
 									$postId = intval(str_replace("selectPostWithID", "", $m['id'])) ; 
 									$postpost = get_post($postId) ; 
 									$occurrence_array .= $postId."," ; 
-									$occurrence .= "<p style='font-size:70%'>".sprintf(__("%s in page %s (%s occurrences)", $this->pluginID), "<span style='font-size:135%'>".$m['text']."</span>", "<a href='".get_permalink($postId)."'>".$postpost->post_title."</a>", $m['nb'])."</p>" ; 
+									if (!is_null($postpost)) {
+										$postpost_post_title = $postpost->post_title ; 
+									} else {
+										$postpost_post_title = __("(Missing page)",$this->pluginID) ; 
+									}
+									$occurrence .= "<p style='font-size:70%'>".sprintf(__("%s in page %s (%s occurrences)", $this->pluginID), "<span style='font-size:135%'>".$m['text']."</span>", "<a href='".get_permalink($postId)."'>".$postpost_post_title."</a>", $m['nb'])."</p>" ; 
 								}
 							}
 						}
@@ -1133,7 +1143,7 @@ p.links_synthesis_entry {
 	* @return void
 	*/
 	
-	function checkLinksSynthesis () {
+	function checkLinksSynthesis($forced=false) {
 		global $wpdb ; 
 		$max_num = $this->get_param('nb_check') ; 
 		
@@ -1142,12 +1152,15 @@ p.links_synthesis_entry {
 			//nothing
 		} else {
 			$results = $wpdb->get_results("SELECT * FROM ".$this->table_name." WHERE (last_check < NOW() - INTERVAL ".$this->get_param('check_cron')." DAY AND http_code='200')  OR (last_check < NOW() - INTERVAL ".$this->get_param('check_cron_error')." DAY AND http_code<>'200') ORDER BY RAND() LIMIT ".$max_num) ; 
-			//DEBUG $results = $wpdb->get_results("SELECT * FROM ".$this->table_name." WHERE id=64") ; 
 			if ( $results ) {
 				//nothing
 			} else {
-				echo "No link to check" ; 
-				die() ; 
+				if (!$forced) {
+					echo "No link to check" ; 
+					die() ; 
+				} else {
+					$results = $wpdb->get_results("SELECT * FROM ".$this->table_name." ORDER BY RAND() LIMIT ".$max_num) ; 
+				}
 			}
 		}
 		
@@ -1215,8 +1228,32 @@ p.links_synthesis_entry {
 				}
 				$wpdb->query($update) ; 
 			}
+			
+			// Remove the pages that does not exists anymore in occurrence
+			$current_occurrence = unserialize(str_replace("##&#39;##", "'", $r->occurrence)) ; 
+			if (is_array($current_occurrence)) {
+				$new_occurrence = array() ; 
+				foreach ($current_occurrence as $ao) {
+					$id_occ = intval(str_replace("selectPostWithID", "", $ao['id'])) ;
+					$post_occ = get_post ($id_occ) ; 
+					if ((!is_null($post_occ))&&($post_occ->post_status!="trash")) {
+						$new_occurrence[] = $ao ; 
+					}
+				}
+				$new_serialized_occurrence = str_replace("'", "##&#39;##", serialize($new_occurrence)) ;
+				if ($new_serialized_occurrence != $r->occurrence) {
+					if (count($new_occurrence)>0) {
+						$update = "UPDATE ".$this->table_name." SET occurrence='".$new_serialized_occurrence."' WHERE id='".$r->id."'" ; 
+					} else {
+						$update = "DELETE FROM ".$this->table_name." WHERE id='".$r->id."'" ; 
+					}
+					$wpdb->query($update) ; 
+				}
+			}	
 		}
-		die() ; 
+		if (!$forced) {
+			die() ; 
+		}
 	}
 	
 	

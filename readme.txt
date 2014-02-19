@@ -59,6 +59,9 @@ Have fun !
 
 == Changelog ==
 
+= 1.1.1 = 
+* NEW: Delete old links when a page has been deleted
+
 = 1.1.0 = 
 * NEW: Links with anchors are now handled (anchor are disregarded when the summary is performed and the anchor are search in the page to see if it exists).
 
@@ -77,4 +80,4 @@ Have fun !
 == Frequently Asked Questions ==
 
  
-InfoVersion:dde2ba3257bac7ae6abc4a8b1bdb17ff
+InfoVersion:7df2a465b6b93f8c7dcce88c106dc44d
