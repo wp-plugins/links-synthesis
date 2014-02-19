@@ -3,7 +3,8 @@
 Plugin Name: Links synthesis
 Plugin Tag: tag
 Description: <p>This plugin enables a synthesis of all links in an article and retrieves data from them. </p><p>In this plugin, an index of all links in the page/post is created at the end of the page/post. </p><p>In addition, each link is periodically check to see if the link is still valid. </p><p>Finally, you may customize the display of each link thanks to metatag and headers.</p><p>This plugin is under GPL licence. </p>
-Version: 1.0.9
+Version: 1.1.0
+
 
 Framework: SL_Framework
 Author: sedLex
@@ -264,71 +265,76 @@ class links_synthesis extends pluginSedLex {
 				}
 				$truc="" ; 
 				
-				// We search for the correct display
-				$regexps = $this->get_param_macro('custom_regexp') ; 
-				$entries = $this->get_param_macro('custom_display') ; 
-				for ($i=0 ; $i<count($regexps) ; $i++) {
-					if (preg_match($regexps[$i],$tl['url'])) {
-						$truc = $entries[$i]."\r\n"  ; 
-						break ; 
-					}
-				}
+				// Display only if it is not an anchor
+				if (!$tl['anchor']) {
 				
-				// Default display
-				if ($truc=="") {
-					$truc = $this->get_param('html_entry')."\r\n" ; 
-				}
-				
-				$truc = str_replace("%num%", $tl['num'], $truc) ; 
-				$truc = str_replace("%anchor%", "<a id='links_ref".$tl['num']."'></a>", $truc) ;
-				$truc = str_replace("%href%", $tl['url'], $truc) ; 
-				$truc = str_replace("%title%", $tl['title'], $truc) ; 
-				if (is_user_logged_in()) {
-					$truc = str_replace("%admin_status%", $tl['status'], $truc) ; 
-				} else {
-					$truc = str_replace("%admin_status%", "", $truc) ; 
-				}
-				// Metatag
-				$meta = unserialize(str_replace("##&#39;##", "'", $tl['metatag'])) ; 
-				if (is_array($meta)) {
-					foreach ($meta as $mt) {
-						$truc = str_replace("%meta_".$mt['name']."%", $mt['value'], $truc) ; 
+					// We search for the correct display
+					$regexps = $this->get_param_macro('custom_regexp') ; 
+					$entries = $this->get_param_macro('custom_display') ; 
+					for ($i=0 ; $i<count($regexps) ; $i++) {
+						if (preg_match($regexps[$i],$tl['url'])) {
+							$truc = $entries[$i]."\r\n"  ; 
+							break ; 
+						}
 					}
-				}
-				// Header
-				if ($tl['http_code']!=0) {
-					$head = unserialize(str_replace("##&#39;##", "'", $tl['header'])) ; 
-					if (is_array($head)) {
-						foreach ($head as $mtk=>$mt) {
-							if (is_string($mt) && is_string($mtk)) {
-								$truc = str_replace("%head_".$mtk."%", $mt, $truc) ; 
+				
+					// Default display
+					if ($truc=="") {
+						$truc = $this->get_param('html_entry')."\r\n" ; 
+					}
+				
+					$truc = str_replace("%num%", $tl['num'], $truc) ; 
+					$truc = str_replace("%anchor%", "<a id='links_ref".$tl['num']."'></a>", $truc) ;
+					$truc = str_replace("%href%", $tl['url'], $truc) ; 
+					$truc = str_replace("%title%", $tl['title'], $truc) ; 
+					if (is_user_logged_in()) {
+						$truc = str_replace("%admin_status%", $tl['status'], $truc) ; 
+					} else {
+						$truc = str_replace("%admin_status%", "", $truc) ; 
+					}
+					// Metatag
+					$meta = unserialize(str_replace("##&#39;##", "'", $tl['metatag'])) ; 
+					if (is_array($meta)) {
+						foreach ($meta as $mt) {
+							$truc = str_replace("%meta_".$mt['name']."%", $mt['value'], $truc) ; 
+						}
+					}
+					// Header
+					if ($tl['http_code']!=0) {
+						$head = unserialize(str_replace("##&#39;##", "'", $tl['header'])) ; 
+						if (is_array($head)) {
+							foreach ($head as $mtk=>$mt) {
+								if (is_string($mt) && is_string($mtk)) {
+									$truc = str_replace("%head_".$mtk."%", $mt, $truc) ; 
+								}
 							}
 						}
 					}
-				}
-				// #REPLACE(word_to_find##word_to_replace##sentence)# 
-				if (strpos($truc, "#REPLACE(")!==false) {
-					$truc = preg_replace_callback("/#REPLACE\((.*)##(.*)##(.*)\)#/mU", array($this, "_replace_in_links"), $truc) ;
-				}
-				// #EXPLODE(delimiter##sentence)(nb)# 
-				if (strpos($truc, "#EXPLODE(")!==false) {
-					$truc = preg_replace_callback("/#EXPLODE\((.*)##(.*)\)\((.*)\)#/mU", array($this, "_explode_in_links"), $truc) ;
-				}
+					// #REPLACE(word_to_find##word_to_replace##sentence)# 
+					if (strpos($truc, "#REPLACE(")!==false) {
+						$truc = preg_replace_callback("/#REPLACE\((.*)##(.*)##(.*)\)#/mU", array($this, "_replace_in_links"), $truc) ;
+					}
+					// #EXPLODE(delimiter##sentence)(nb)# 
+					if (strpos($truc, "#EXPLODE(")!==false) {
+						$truc = preg_replace_callback("/#EXPLODE\((.*)##(.*)\)\((.*)\)#/mU", array($this, "_explode_in_links"), $truc) ;
+					}
 				
-				// remove unused tag
-				$truc = preg_replace("/\%[^\%]*\%/i", "", $truc) ; 
-				// Cosmetic
-				$truc = str_replace("()", "", $truc) ; 
-				$truc = str_replace(",,", "", $truc) ; 
-				$truc = trim($truc) ; 
-				$truc = str_replace(", ,", "", $truc) ; 
-				$truc = trim($truc) ; 
-				echo $truc ; 
-				
-				
+					// remove unused tag
+					$truc = preg_replace("/\%[^\%]*\%/i", "", $truc) ; 
+					// Cosmetic
+					$truc = str_replace("()", "", $truc) ; 
+					$truc = str_replace(",,", "", $truc) ; 
+					$truc = trim($truc) ; 
+					$truc = str_replace(", ,", "", $truc) ; 
+					$truc = trim($truc) ; 
+					echo $truc ;
+				}
+	
 				// We update the number of occurrence
 				$result = $wpdb->get_results("SELECT * FROM ".$this->table_name." WHERE url='".str_replace("'", "&#39;", $tl['url'])."' LIMIT 1 ; ") ; 
+
 				if ( $result ) {
+
 					$current_occurrence = unserialize(str_replace("##&#39;##", "'", $result[0]->occurrence)) ; 
 					
 					if (!is_array($current_occurrence)) {
@@ -384,7 +390,8 @@ class links_synthesis extends pluginSedLex {
 			}
 			
 			
-		$reftable = ob_get_clean() ; 
+		$reftable = ob_get_clean() ;
+		 
 		if ( ($this->get_param('display')) || ( ($this->get_param('display_admin'))&&(is_user_logged_in()) ) ) {
 			$content = $content.str_replace("%links_synthesis%", $reftable, $this->get_param('html')) ; 
 		} else {
@@ -426,7 +433,9 @@ class links_synthesis extends pluginSedLex {
 				}
 			}	
 		}
-				
+		
+		// We delete entries that have no occurrence (Seulement en cas de probleme ==> Nettoyage)
+		//$wpdb->query("DELETE FROM ".$this->table_name." WHERE occurrence not like '%selectPostWithID%'") ; 
 		return $content; 
 	}
 	
@@ -476,7 +485,7 @@ class links_synthesis extends pluginSedLex {
 		global $post ; 
   		
   		// comme d'habitude : $matches[0] represente la valeur totale
-  		// $matches[1] represente la premiÃ¨re parenthÃ¨se capturante
+  		// $matches[1] represente la premiere parenthese capturante
 		
 		$true_content = $post->post_content ; 
 		
@@ -484,8 +493,7 @@ class links_synthesis extends pluginSedLex {
 			return $matches[0] ; 
 		}
 		
-		// si non présent dans le post initial, on ne fait rien
-
+		// si non present dans le post initial, on ne fait rien
 		if (strpos($true_content, $matches[2])===false) {
   			return $matches[0] ; 
   		}
@@ -505,6 +513,15 @@ class links_synthesis extends pluginSedLex {
   			return $matches[0] ; 
   		}
   		
+  		// On regarde si on doit nettoyer le lien pour supprimer l'ancre (pour l'affichage uniquement)
+  		$key_url = md5($matches[2]) ; 
+  		$short_url = $matches[2] ; 
+  		if ($this->get_param('handle_anchor')) {
+  			$tmp = explode("#",$matches[2]) ; 
+  			$key_url = md5($tmp[0]) ;
+  			$short_url = $tmp[0] ; 
+  		}
+  		
   		// On regarde si on doit l'afficher
   		$toBeDisplayed = true ; 
   		if ($this->get_param('only_external')) {
@@ -514,37 +531,72 @@ class links_synthesis extends pluginSedLex {
   		}		
 		
 		// We update the list
-   		if (!isset($this->table_links[md5($matches[2])])) {
+   		if (!isset($this->table_links[$key_url])) {
 			$this->count_nb ++ ; 
   	   		$result = $wpdb->get_results("SELECT * FROM ".$this->table_name." WHERE url='".str_replace("'", "&#39;", $matches[2])."' LIMIT 1 ; ") ; 
 			$status = "" ; 
 			if ( $result ) {
 				if ($result[0]->http_code==200) {
 					$status = "" ; 
+				} else if ($result[0]->http_code==210) { // Mme si l'ancre est manquante on dit que ok car c'est pour la key_url i.e. sans l'ancre
+					$status = "" ; 
 				} else if ($result[0]->http_code==0) {
 					$status = $this->http_status_code_string(0, true, true, $result[0]->header) ; 
 				} else {
 					$status = $this->http_status_code_string($result[0]->http_code, true, true); 
 				}
-				$this->table_links[md5($matches[2])] = array("num"=>$this->count_nb, "occ"=> array(), "url"=>$matches[2], "title"=>$result[0]->title, "status"=>$status, "metatag"=>$result[0]->metatag, "header"=>$result[0]->header, "http_code"=>$result[0]->http_code) ; 				
+				$this->table_links[$key_url] = array("anchor"=>false, "num"=>$this->count_nb, "occ"=> array(), "url"=>$short_url, "title"=>$result[0]->title, "status"=>$status, "metatag"=>$result[0]->metatag, "header"=>$result[0]->header, "http_code"=>$result[0]->http_code) ; 				
 			} else {
-				$this->table_links[md5($matches[2])] = array("num"=>$this->count_nb, "occ"=> array(), "url"=>$matches[2], "title"=>"", "status"=>$this->http_status_code_string(-1, true, true) , "metatag"=>serialize(array()), "header"=>serialize(array()), "http_code"=>-1) ; 				
+				$this->table_links[$key_url] = array("anchor"=>false, "num"=>$this->count_nb, "occ"=> array(), "url"=>$short_url, "title"=>"", "status"=>$this->http_status_code_string(-1, true, true) , "metatag"=>serialize(array()), "header"=>serialize(array()), "http_code"=>-1) ; 				
+				$wpdb->query("INSERT INTO ".$this->table_name." (url, http_code) VALUES ('".str_replace("'", "&#39;", $matches[2])."', -1) ;") ; 	
+			}
+   		} 
+   		
+   		// We put the anchor in the list (but hidden)
+   		$ancre_status = "" ; 
+   		if (!isset($this->table_links[md5($matches[2])])) {
+  	   		$result = $wpdb->get_results("SELECT * FROM ".$this->table_name." WHERE url='".str_replace("'", "&#39;", $matches[2])."' LIMIT 1 ; ") ; 
+			$ancre_status = "" ; 
+			if ( $result ) {
+				if ($result[0]->http_code==200) {
+					$ancre_status = "" ;  
+				} else if ($result[0]->http_code==0) {
+					$ancre_status = $this->http_status_code_string(0, true, true, $result[0]->header) ; 
+				} else {
+					$ancre_status = $this->http_status_code_string($result[0]->http_code, true, true); 
+				}
+				$this->table_links[md5($matches[2])] = array("anchor"=>true, "num"=>-1, "occ"=> array(), "url"=>$matches[2], "title"=>$result[0]->title, "status"=>$ancre_status, "metatag"=>$result[0]->metatag, "header"=>$result[0]->header, "http_code"=>$result[0]->http_code) ; 				
+			} else {
+				$this->table_links[md5($matches[2])] = array("anchor"=>true, "num"=>-1, "occ"=> array(), "url"=>$matches[2], "title"=>"", "status"=>$this->http_status_code_string(-1, true, true) , "metatag"=>serialize(array()), "header"=>serialize(array()), "http_code"=>-1) ; 				
 				$wpdb->query("INSERT INTO ".$this->table_name." (url, http_code) VALUES ('".str_replace("'", "&#39;", $matches[2])."', -1) ;") ; 	
 			}
    		} 
    		
    		// We update the occurrence of text in the list
-		if (isset($this->table_links[md5($matches[2])]["occ"][trim($matches[4])])) {
-			$this->table_links[md5($matches[2])]["occ"][trim($matches[4])] ++ ; 
+		if (isset($this->table_links[$key_url]["occ"][trim($matches[4])])) {
+			$this->table_links[$key_url]["occ"][trim($matches[4])] ++ ; 
 		} else {
-			$this->table_links[md5($matches[2])]["occ"][trim($matches[4])] = 1 ; 
+			$this->table_links[$key_url]["occ"][trim($matches[4])] = 1 ; 
+		}
+		
+		// We update the occurrence of the anchor in the list
+		if ($key_url!=md5($matches[2])) {
+			if (isset($this->table_links[md5($matches[2])]["occ"][trim($matches[4])])) {
+				$this->table_links[md5($matches[2])]["occ"][trim($matches[4])] ++ ; 
+			} else {
+				$this->table_links[md5($matches[2])]["occ"][trim($matches[4])] = 1 ; 
+			}
 		}
   		
   		if (($toBeDisplayed) && ( ($this->get_param('display')) || ( ($this->get_param('display_admin'))&&(is_user_logged_in()) ) )) {
   			if (($this->get_param('display_error_admin'))&&(is_user_logged_in())) {
-  				return $matches[0]."<sup class='synthesis_sup'><a href='#links_ref".$this->table_links[md5($matches[2])]["num"]."'>".$this->table_links[md5($matches[2])]["num"]."</a></sup>".$this->table_links[md5($matches[2])]["status"] ; 
+  				if ($ancre_status!="") {
+  					return $matches[0]."<sup class='synthesis_sup'><a href='#links_ref".$this->table_links[$key_url]["num"]."'>".$this->table_links[$key_url]["num"]."</a></sup>".$ancre_status ; 
+  				} else {
+  					return $matches[0]."<sup class='synthesis_sup'><a href='#links_ref".$this->table_links[$key_url]["num"]."'>".$this->table_links[$key_url]["num"]."</a></sup>".$this->table_links[$key_url]["status"] ; 
+				}
   			} else {
-  				return $matches[0]."<sup class='synthesis_sup'><a href='#links_ref".$this->table_links[md5($matches[2])]["num"]."'>".$this->table_links[md5($matches[2])]["num"]."</a></sup>" ; 
+  				return $matches[0]."<sup class='synthesis_sup'><a href='#links_ref".$this->table_links[$key_url]["num"]."'>".$this->table_links[$key_url]["num"]."</a></sup>" ; 
   			}
   		} else {
   			return $matches[0] ; 
@@ -594,6 +646,9 @@ class links_synthesis extends pluginSedLex {
 	public function get_default_option($option) {
 		switch ($option) {
 			// Alternative default return values (Please modify)
+			case 'handle_anchor' : return true ; 
+			case 'check_presence_anchor' : return true ; 
+			
 			case 'display' : return true ; 
 			case 'display_admin' : return true ; 
 			case 'display_error_admin' : return false ; 
@@ -1001,6 +1056,9 @@ p.links_synthesis_entry {
 				$params->add_title(__('Advanced options',  $this->pluginID)) ; 
 				$params->add_param('exclu', __('Pages that should be excluded from any actions of this plugin:',  $this->pluginID)) ;  
 				$params->add_param('show_nb_error', __('Show the number of errors in the admin menu:',  $this->pluginID)) ;  
+				$params->add_param('handle_anchor', __('Consider links which differ by the anchor as identical (frontend only):',  $this->pluginID)) ;  
+				$params->add_comment(sprintf(__('Thus, %s and %s will be consider as identical (only for the display in the frontend)',  $this->pluginID), "<code>http://url/page.html#anchor1</code>", "<code>http://url/page.html#anchor2</code>")) ; 
+				$params->add_param('check_presence_anchor', __('When checking the link, check that the page contains an appropriate anchor:',  $this->pluginID)) ;  
 
 				$params->add_title_macroblock(__('Custom rule %s',  $this->pluginID), __('Add a new custom rule',  $this->pluginID)) ; 
 				$params->add_param('custom_regexp', __('Regexp for this rule:',  $this->pluginID)) ;  
@@ -1143,6 +1201,16 @@ p.links_synthesis_entry {
 					if ($real_code!=-1) {
 						$res['http_code'] = $real_code ; 
 					}
+					// On verifie, si on a une ancre, que celle ci se retrouve bien dans la page
+					if (($res['http_code']==200)&&($this->get_param('check_presence_anchor'))) {
+						$anchor = explode("#",$r->url) ; 
+						if (isset($anchor[1])) {
+							$content_body  = $content['body'] ; 
+							if ((!preg_match("/<a ([^>]*)name='".$anchor[1]."'([^>]*)>/u",$content_body))&&(!preg_match('/<a ([^>]*)name="'.$anchor[1].'"([^>]*)>/u',$content_body))) {
+								$res['http_code'] = 210 ; // no anchor found
+							}
+						}
+					}
 					$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='".$res['http_code']."', failure_first=NULL, redirect_url='".$res['redirect_url']."', title='".str_replace("'", "&#39;", $res['title'])."', metatag='".str_replace("'", "##&#39;##", $res['metatag'])."', header='".str_replace("'", "##&#39;##", $res['header'])."' WHERE id='".$r->id."'" ; 
 				}
 				$wpdb->query($update) ; 
@@ -1230,6 +1298,8 @@ p.links_synthesis_entry {
 			case 205: $string = 'Reset Content'; $color="#009933"; break;
 			case 206: $string = 'Partial Content'; $color="#009933"; break;
 			case 207: $string = 'Multi-Status'; $color="#009933"; break; // WebDAV
+			
+			case 210: $string = 'OK but no anchor found'; $color="#FF9900"; break; // Custom error code to indicate that no anchor found
 
 			// 3xx Redirection
 			case 300: $string = 'Multiple Choices'; $color="#FF9900"; break;

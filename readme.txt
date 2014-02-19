@@ -53,37 +53,28 @@ Have fun !
 
 == Screenshots ==
 
+1. Links with issues
+2. All Links
+3. Some parameters
+
 == Changelog ==
 
-= 1.0.9 = 
+= 1.1.0 = 
+* NEW: Links with anchors are now handled (anchor are disregarded when the summary is performed and the anchor are search in the page to see if it exists).
+
+= 1.0.0 -&gt; 1.0.9 = 
 * Various enhancement
-
-= 1.0.8 = 
 * Exclude links that are added by plugins
-
-= 1.0.7 = 
 * Remove blank after the sup links
-
-= 1.0.6 = 
 * Regexp is improved and then changed to be more robust : WARNING you shoud update your regexp if you have one
-
-= 1.0.5 = 
 * It is now possible to use pseudo function REPLACE and EXPLODE
-
-= 1.0.4 = 
 * Limit the number of update of the DB
 * Resolve a bug which delete valid link
-
-= 1.0.3 = 
 * Improve the management of links
-
-= 1.0.2 = 
 * It is now possible to change URL with redirection to the redirected URL
-
-= 1.0.1 = 
 * First release
 
 == Frequently Asked Questions ==
 
  
-InfoVersion:d7723a3a2b2e73021aa74032655c14e3
+InfoVersion:dde2ba3257bac7ae6abc4a8b1bdb17ff
