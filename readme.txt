@@ -59,6 +59,9 @@ Have fun !
 
 == Changelog ==
 
+= 1.1.3 = 
+* BUG: Avoid taking in account links that has been added by other plugins
+
 = 1.1.2 = 
 * NEW: Add a new feature to force the verification of all links and all page (for low traffic website)
 
@@ -83,4 +86,4 @@ Have fun !
 == Frequently Asked Questions ==
 
  
-InfoVersion:7e4871985d8929686f7f80f8f4e13505
+InfoVersion:afe4759d47dda052a2654671229ce9ce

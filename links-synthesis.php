@@ -3,7 +3,7 @@
 Plugin Name: Links synthesis
 Plugin Tag: tag
 Description: <p>This plugin enables a synthesis of all links in an article and retrieves data from them. </p><p>In this plugin, an index of all links in the page/post is created at the end of the page/post. </p><p>In addition, each link is periodically check to see if the link is still valid. </p><p>Finally, you may customize the display of each link thanks to metatag and headers.</p><p>This plugin is under GPL licence. </p>
-Version: 1.1.2
+Version: 1.1.3
 
 
 Framework: SL_Framework
@@ -240,11 +240,13 @@ class links_synthesis extends pluginSedLex {
 		global $post ; 
 		global $wpdb ; 
 		
-		$this->content_for_callback = $content ; 
 		
 		if ($pid==-1) {
 			$pid = $post->ID ; 
-		}
+		} 
+		
+		$postpost = get_post($pid) ; 
+		$this->content_for_callback = $postpost->post_content ; // on ne met pas content car il y a beaucoup de lien ajoutŽ par d'autres plugins
 		
 		// We check whether there is an exclusion
 		$exclu = $this->get_param('exclu') ;
