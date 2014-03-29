@@ -44,6 +44,25 @@ function recheckURL(oldURL) {
 	});   
 }
 
+function ignoreURL(oldURL) {
+	var arguments = {
+		action: 'ignoreURL', 
+		oldURL : oldURL
+	} 
+	//POST the data and append the results to the results div
+	jQuery.post(ajaxurl, arguments, function(response) {
+		window.location.href=window.location.href ; 
+	}).error(function(x,e) { 
+		if (x.status==0){
+			//Offline
+		} else if (x.status==500){
+			ignoreURL(oldURL) ; 
+		} else {
+			alert("Error "+x.status) ; 
+		}
+	});   
+}
+
 function changeURL(oldURL, newURL, idPost) {
 	var arguments = {
 		action: 'changeURL', 

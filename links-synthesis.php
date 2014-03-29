@@ -3,9 +3,7 @@
 Plugin Name: Links synthesis
 Plugin Tag: tag
 Description: <p>This plugin enables a synthesis of all links in an article and retrieves data from them. </p><p>In this plugin, an index of all links in the page/post is created at the end of the page/post. </p><p>In addition, each link is periodically check to see if the link is still valid. </p><p>Finally, you may customize the display of each link thanks to metatag and headers.</p><p>This plugin is under GPL licence. </p>
-Version: 1.1.3
-
-
+Version: 1.1.4
 Framework: SL_Framework
 Author: sedLex
 Author URI: http://www.sedlex.fr/
@@ -55,6 +53,7 @@ class links_synthesis extends pluginSedLex {
 		// For instance add_action( "wp_ajax_foo",  array($this,"bar")) : this function will call the method 'bar' when the ajax action 'foo' is called
 		add_action( "wp_ajax_changeURL",  array($this,"changeURL")) ; 
 		add_action( "wp_ajax_recheckURL",  array($this,"recheckURL")) ; 
+		add_action( "wp_ajax_ignoreURL",  array($this,"ignoreURL")) ; 
 		
 		add_action( "wp_ajax_stopAnalysisLinks",  array($this,"stopAnalysisLinks")) ; 
 		add_action( "wp_ajax_forceAnalysisLinks",  array($this,"forceAnalysisLinks")) ; 
@@ -128,7 +127,7 @@ class links_synthesis extends pluginSedLex {
 		global $wpdb ; 
 		$nb = 0 ; 
 		if ($this->get_param('show_nb_error')) {
-			$nb = $wpdb->get_var("SELECT COUNT(*) FROM ".$this->table_name." WHERE http_code!='200' AND http_code!='-1'") ; 
+			$nb = $wpdb->get_var("SELECT COUNT(*) FROM ".$this->table_name." WHERE http_code!='200' AND http_code!='-1' AND http_code!='-2'") ; 
 		}
 		return $nb ; 
 	}
@@ -735,11 +734,13 @@ p.links_synthesis_entry {
 		SL_Debug::log(get_class(), "Print the configuration page." , 4) ; 
 				
 		?>
-		<div class="wrap">
-			<div id="icon-themes" class="icon32"><br></div>
+		<div class="plugin-titleSL">
 			<h2><?php echo $this->pluginName ?></h2>
 		</div>
-		<div style="padding:20px;">			
+		
+		<div class="plugin-contentSL">		
+			<?php echo $this->signature ; ?>
+
 			<?php
 			//===============================================================================================
 			// After this comment, you may modify whatever you want
@@ -773,21 +774,31 @@ p.links_synthesis_entry {
 				$maxnb = 20 ; 
 				
 				$all_regexp = $this->get_param_macro('custom_regexp') ; 
-				$nb_match_regexp = array() ; 
-				$nb_match_regexp['normal'] = 0 ; 
-								
-				echo "<h3>".__("Filter links based on Custom rule ", $this->pluginID)."</h3>" ; 
-				echo "<form method='GET' action='".remove_query_arg(array('show_regexp'))."'>" ; 
-				$check = "" ; 
-				if ((!isset($show_regexp))||(isset($show_regexp['normal']))) {
-					$check = "checked" ; 
-				}
-				echo "<p><input type='checkbox' name='show_regexp[]' value='normal' $check> ".__("Links which do not match any regex of Custom rule", $this->pluginID)."</p>" ; 
-				foreach ($all_regexp as $r) {
-					echo "<p><input type='checkbox' name='show_regexp[]' value='".md5($r)."'> ".sprintf(__("Links which match regex %s", $this->pluginID), "<code>".$r."</code>")."</p>" ; 
-				}
-				echo "<p><input type='submit' class='button-primary validButton' value='".__("Filter results based on regexp",$this->pluginID)."'/></p>" ; 
-				echo "</form>";		
+				
+				// Affichage 
+				if (count($all_regexp)>0) {
+					echo "<h3>".__("Filter links based on Custom rule ", $this->pluginID)."</h3>" ; 
+					echo "<form method='get' action='".remove_query_arg(array('show_regexp'))."'>" ; 
+					$check = "" ;
+					$regexp_to_be_matched = array() ; 
+
+					echo '<input name="page" value="'.str_replace('"', "", $_GET['page']).'" type="hidden"/>' ; 
+					foreach ($all_regexp as $r) {
+						$check = "" ; 
+						if (isset($_GET['show_regexp'])) {
+							$show_regexp = $_GET['show_regexp'] ; 
+							foreach ($show_regexp as $sr) {
+								if ($sr==md5($r)) {
+									$check = "checked" ; 
+									$regexp_to_be_matched[] = $r ;  
+								}
+							}
+						}
+						echo "<p><input type='checkbox' name='show_regexp[]' value='".md5($r)."' $check> ".sprintf(__("Links which match regex %s", $this->pluginID), "<code>".$r."</code>")."</p>" ; 
+					}
+					echo "<p><input type='submit' class='button-primary validButton' value='".__("Filter results based on regexp",$this->pluginID)."'/></p>" ; 
+					echo "</form>";	
+				}	
 				
 				$table = new adminTable(0, $maxnb, true, true) ;
 				$table->title(array(__('URL', $this->pluginID), __('Posts/Articles', $this->pluginID), __('Status', $this->pluginID), __('Keywords', $this->pluginID))) ; 
@@ -800,39 +811,30 @@ p.links_synthesis_entry {
 				$filter = explode(" ", $table->current_filter()) ; 
 				foreach ($results as $r) {
 				
-					// We first look if the url match a regexp
+					// We first look if the url match a selected regexp
 					$match_regexp = false ; 
-					for ($i=0 ; $i<count($all_regexp) ; $i++) {
-						if (preg_match($all_regexp[$i],$r->url)) {
-							if (isset($nb_match_regexp[$all_regexp[$i]])) {
-								$nb_match_regexp[$all_regexp[$i]] ++ ; 
-							} else {
-								$nb_match_regexp[$all_regexp[$i]] = 1 ; 
-							}
+					$match = false ;
+					for ($i=0 ; $i<count($regexp_to_be_matched) ; $i++) {
+						if (preg_match($regexp_to_be_matched[$i],$r->url)) {
 							$match_regexp = true ; 
 							break ; 
 						}
 					}
 					
-					if (!$match_regexp) {
-						$nb_match_regexp['normal'] ++ ; 
-					} else {
-						if (isset($_GET['show_only_default_matching'])) {
-							continue ; 
-						}
-					}
-					
-					$match = true ;
-					foreach ($filter as $fi) {
-						if ($fi!="") {
-							if ((strpos($r->title, $fi)===FALSE)&&(strpos($r->url, $fi)===FALSE)&&(strpos($r->http_code, $fi)===FALSE)) {
-								$match = false ; 
-								break ; 
+					// We then look if the url match the text entered in the field
+					if (count($regexp_to_be_matched)==0) {
+						$match = true ;
+						foreach ($filter as $fi) {
+							if ($fi!="") {
+								if ((strpos($r->title, $fi)===FALSE)&&(strpos($r->url, $fi)===FALSE)&&(strpos($r->http_code, $fi)===FALSE)) {
+									$match = false ; 
+									break ; 
+								}
 							}
 						}
 					}
 					
-					if ($match) {
+					if ($match||$match_regexp) {
 						$metatag = "" ; 
 						if (is_array(unserialize(str_replace("##&#39;##", "'", $r->metatag)))) {
 							foreach (unserialize(str_replace("##&#39;##", "'", $r->metatag)) as $k=>$m) {
@@ -915,7 +917,7 @@ p.links_synthesis_entry {
 						} 
 					}					
 					$first_failure = "" ; 
-					if ((($r[2]<200)||($r[2]>=400))&&($r[2]!=-1)) {
+					if ((($r[2]<200)||($r[2]>=400))&&($r[2]!=-1)&&($r[2]!=-2)) {
 						$now = $wpdb->get_var("SELECT CURRENT_TIMESTAMP ;") ;
 						$nb_days =  floor((strtotime($now) - strtotime($r[6]))/86400) ; 
 						if ($nb_days == 0) {
@@ -1002,20 +1004,6 @@ p.links_synthesis_entry {
 				
 				$params->flush() ; 
 				
-				$content = "" ; 
-				foreach ($nb_match_regexp as $reg=>$nb) {
-					if ($reg=="normal") {
-						$content .= "<p>".sprintf(__('The default HTML for entries will be used for %s links',  $this->pluginID), $nb)."</p>" ; 
-					} else {
-						$content .= "<p>".sprintf(__('The HTML for entries with Custom Rule %s will be used for %s links',  $this->pluginID), "<code>".$reg."</code>", $nb)."</p>" ; 
-					}
-				}
-				
-				$box = new boxAdmin (__('Regular expression matching',  $this->pluginID), $content) ; 
-				echo $box->flush() ; 
-
-				
-				
 			$tabs->add_tab(__('Parameters',  $this->pluginID), ob_get_clean() , WP_PLUGIN_URL.'/'.str_replace(basename(__FILE__),"",plugin_basename(__FILE__))."core/img/tab_param.png") ; 	
 			
 			$frmk = new coreSLframework() ;  
@@ -1076,7 +1064,7 @@ p.links_synthesis_entry {
 		$table->title(array(__('URL', $this->pluginID), __('Posts/Articles', $this->pluginID), __('Status', $this->pluginID))) ; 
 	
 		// Tous les resultats
-		$results = $wpdb->get_results("SELECT * FROM ".$this->table_name." WHERE http_code!='200' AND http_code!='-1'") ; 
+		$results = $wpdb->get_results("SELECT * FROM ".$this->table_name." WHERE http_code!='200' AND http_code!='-1' AND http_code!='-2'") ; 
 	
 		$filtered_results = array() ; 
 		$filter = explode(" ", $table->current_filter()) ; 
@@ -1136,7 +1124,8 @@ p.links_synthesis_entry {
 			$cel_url = new adminCell("<p id='url".$r[4]."'><a href='".$r[0]."'>".$r[0]."</a></p><p id='change".$r[4]."' style='display:none;'><input id='newURL".$r[4]."' type='text' value='".$r[0]."' style='width: 100%;'/><br/><input type='button' onclick='modifyURL2(\"".$r[0]."\",\"".$r[4]."\",".$r[8].");' value='".__("Modify", $this->pluginID)."' class='button-primary validButton'/> &nbsp; <input type='button' onclick='annul_modifyURL(".$r[4].")' value='".__("Cancel", $this->pluginID)."' class='button validButton'/></p>") ;
 			$cel_url->add_action(__("Recheck", $this->pluginID), "recheckURL('".$r[0]."');") ; 
 			$cel_url->add_action(__("Modify", $this->pluginID), "modifyURL('".$r[4]."');") ; 
-
+			$cel_url->add_action(__("Ignore", $this->pluginID), "ignoreURL('".$r[0]."');") ; 
+					
 			$cel_occurrence = new adminCell($r[1]) ;
 			$status_string = $this->http_status_code_string($r[2], true, true, $r[7]) ; 
 			$last_check = "" ; 
@@ -1480,6 +1469,7 @@ p.links_synthesis_entry {
 
 	function http_status_code_string($code, $include_code=false, $include_color=false, $comment="") {
 		switch( $code ) {
+			case -2: $string = __('(Asked to be ignored)', $this->pluginID); $color="#8F8F8F"; break;
 			case -1: $string = __('(Not yet checked)', $this->pluginID); $color="#8F8F8F"; break;
 
 			case 0: $string = $comment; $color="#CC0000"; $include_code=false; break;
@@ -1555,7 +1545,7 @@ p.links_synthesis_entry {
 			default: $string = 'Unknown '.$code;  $color="#FF0066"; break;
 		}
 		
-		if (($include_code)&&($code!=-1)) {
+		if (($include_code)&&($code!=-1)&&($code!=-2)) {
 			$string = $code . ' '.$string;
 		}
 		if ($include_color) {
@@ -1578,6 +1568,23 @@ p.links_synthesis_entry {
 		$oldURL = $_POST['oldURL'] ; 
 
 		$update = "UPDATE ".$this->table_name." SET last_check=(NOW()- INTERVAL 400 DAY), http_code='-1' WHERE url='".$oldURL."'" ; 
+		$wpdb->query($update) ; 
+			
+		die() ; 
+	}
+	
+	/** ====================================================================================================================================================
+	* Callback to ignore the URL 
+	*
+	* @return array list of parsed element
+	*/
+	
+	function ignoreURL() {
+		global $wpdb ; 
+		
+		$oldURL = $_POST['oldURL'] ; 
+
+		$update = "UPDATE ".$this->table_name." SET http_code='-2' WHERE url='".$oldURL."'" ; 
 		$wpdb->query($update) ; 
 			
 		die() ; 

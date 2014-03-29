@@ -59,6 +59,10 @@ Have fun !
 
 == Changelog ==
 
+= 1.1.4 = 
+* NEW: Enhance the appearence of the configuration page
+* BUG: Improve the matching of the regexp
+
 = 1.1.3 = 
 * BUG: Avoid taking in account links that has been added by other plugins
 
@@ -86,4 +90,4 @@ Have fun !
 == Frequently Asked Questions ==
 
  
-InfoVersion:afe4759d47dda052a2654671229ce9ce
+InfoVersion:7dcab219e77edcba593794568b9f5c9b
