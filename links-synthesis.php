@@ -3,7 +3,8 @@
 Plugin Name: Links synthesis
 Plugin Tag: tag
 Description: <p>This plugin enables a synthesis of all links in an article and retrieves data from them. </p><p>In this plugin, an index of all links in the page/post is created at the end of the page/post. </p><p>In addition, each link is periodically check to see if the link is still valid. </p><p>Finally, you may customize the display of each link thanks to metatag and headers.</p><p>This plugin is under GPL licence. </p>
-Version: 1.1.4
+Version: 1.2.0
+
 Framework: SL_Framework
 Author: sedLex
 Author URI: http://www.sedlex.fr/
@@ -16,6 +17,7 @@ License: GPL3
 //Including the framework in order to make the plugin work
 
 require_once('core.php') ; 
+require_once('include/grabzit2.1.4/lib/GrabzItClient.class.php') ; 
 
 /** ====================================================================================================================================================
 * This class has to be extended from the pluginSedLex class which is defined in the framework
@@ -54,6 +56,7 @@ class links_synthesis extends pluginSedLex {
 		add_action( "wp_ajax_changeURL",  array($this,"changeURL")) ; 
 		add_action( "wp_ajax_recheckURL",  array($this,"recheckURL")) ; 
 		add_action( "wp_ajax_ignoreURL",  array($this,"ignoreURL")) ; 
+		add_action( "wp_ajax_doNotIgnoreURL",  array($this,"doNotIgnoreURL")) ; 
 		
 		add_action( "wp_ajax_stopAnalysisLinks",  array($this,"stopAnalysisLinks")) ; 
 		add_action( "wp_ajax_forceAnalysisLinks",  array($this,"forceAnalysisLinks")) ; 
@@ -193,7 +196,11 @@ class links_synthesis extends pluginSedLex {
 			}
 		}
 		
-		$this->add_inline_css($this->get_param('css')) ; 
+		$this->add_inline_css(".thumbnail_url_LS{
+	display:none;
+	position:absolute;
+}
+".$this->get_param('css')) ; 
 		
 		return ; 
 	}
@@ -492,9 +499,11 @@ class links_synthesis extends pluginSedLex {
 	
 	function _modify_content_callback($matches) {
 		global $wpdb ; 
+		global $blog_id ; 
   		
   		// comme d'habitude : $matches[0] represente la valeur totale
   		// $matches[1] represente la premiere parenthese capturante
+  		// /<a([^>]*?)href=["\']([^"\']*?)["\']([^>]*?)>(.*?)<\/a>/is
 		
 		$true_content = $this->content_for_callback ; 
 		
@@ -596,19 +605,37 @@ class links_synthesis extends pluginSedLex {
 				$this->table_links[md5($matches[2])]["occ"][trim($matches[4])] = 1 ; 
 			}
 		}
+		
+		$lien_final = $matches[0] ; 
+				
+		// Si on veut avoir une miniature lorsque l'on met la souris dessus
+		// /<a([^>]*?)href=["\']([^"\']*?)["\']([^>]*?)>(.*?)<\/a>/is
+		if ($this->get_param("show_thb_onover")) {
+									
+			// We create the folder for the img files
+			$blog_fold = "" ; 
+			if (is_multisite()) {
+				$blog_fold = $blog_id."/" ; 
+			}
+	
+			if (is_file(WP_CONTENT_DIR."/sedlex/links-synthesis/".$blog_fold."/img_".sha1($matches[2]).".jpg")) {
+				$lien_final = '<a'.$matches[1].'href="'.$matches[2].'"'.$matches[3].' onmouseover="jQuery(\'.img_'.sha1($matches[2]).'\').fadeIn(\'slow\');" onmouseout="jQuery(\'.img_'.sha1($matches[2]).'\').fadeOut(\'slow\');">'.$matches[4].'</a>' ; 
+				$lien_final .= '<img class="thumbnail_url_LS img_'.sha1($matches[2]).'" src="'.WP_CONTENT_URL."/sedlex/links-synthesis/".$blog_fold."/img_".sha1($matches[2]).".jpg".'" />' ; 
+			}
+		}
   		
   		if (($toBeDisplayed) && ( ($this->get_param('display')) || ( ($this->get_param('display_admin'))&&(is_user_logged_in()) ) )) {
   			if (($this->get_param('display_error_admin'))&&(is_user_logged_in())) {
   				if ($ancre_status!="") {
-  					return $matches[0]."<sup class='synthesis_sup'><a href='#links_ref".$this->table_links[$key_url]["num"]."'>".$this->table_links[$key_url]["num"]."</a></sup>".$ancre_status ; 
+  					return $lien_final."<sup class='synthesis_sup'><a href='#links_ref".$this->table_links[$key_url]["num"]."'>".$this->table_links[$key_url]["num"]."</a></sup>".$ancre_status ; 
   				} else {
-  					return $matches[0]."<sup class='synthesis_sup'><a href='#links_ref".$this->table_links[$key_url]["num"]."'>".$this->table_links[$key_url]["num"]."</a></sup>".$this->table_links[$key_url]["status"] ; 
+  					return $lien_final."<sup class='synthesis_sup'><a href='#links_ref".$this->table_links[$key_url]["num"]."'>".$this->table_links[$key_url]["num"]."</a></sup>".$this->table_links[$key_url]["status"] ; 
 				}
   			} else {
-  				return $matches[0]."<sup class='synthesis_sup'><a href='#links_ref".$this->table_links[$key_url]["num"]."'>".$this->table_links[$key_url]["num"]."</a></sup>" ; 
+  				return $lien_final."<sup class='synthesis_sup'><a href='#links_ref".$this->table_links[$key_url]["num"]."'>".$this->table_links[$key_url]["num"]."</a></sup>" ; 
   			}
   		} else {
-  			return $matches[0] ; 
+  			return $lien_final ; 
   		}
   		
 	}
@@ -716,6 +743,12 @@ p.links_synthesis_entry {
 			case 'list_link_id_to_check': return array()			; break ; 
 			case 'nb_link_to_check'  : return 0 ; break ; 
 			case 'max_page_to_check'  : return 200 ; break ; 
+			
+			case 'show_thb_onover' : return false ; break ;  
+			case 'enable_grabzit' : return false ; break ;  
+			case 'grabzit_Application_Key': return "" ; break ; 
+			case 'grabzit_Application_Secret': return "" ; break ; 
+			
 		}
 		return null ;
 	}
@@ -747,6 +780,7 @@ p.links_synthesis_entry {
 			?>
 			<p><?php echo __("In this plugin, an index of all links in the page/post is created at the end of the page/post.", $this->pluginID) ;?></p>
 			<p><?php echo __("In addition, each link is periodically checked to see if the link is still valid.", $this->pluginID) ;?></p>
+			<p><?php echo __("You may also create a thumbnail of the URL to be displayed when the mouse if over the link.", $this->pluginID) ;?></p>
 			<p><?php echo __("Finally, you may customize the display of each link thanks to metatag and headers.", $this->pluginID) ;?></p>
 			<?php
 			
@@ -866,7 +900,7 @@ p.links_synthesis_entry {
 									} else {
 										$postpost_post_title = __("(Missing page)",$this->pluginID) ; 
 									}
-									$occurrence .= "<p style='font-size:70%'>".sprintf(__("%s in page %s (%s occurrences)", $this->pluginID), "<span style='font-size:135%'>".$m['text']."</span>", "<a href='".get_permalink($postId)."'>".$postpost_post_title."</a>", $m['nb'])."</p>" ; 
+									$occurrence .= "<p>".sprintf(__("%s in page %s (%s occurrences)", $this->pluginID), "<code>".$m['text']."</code>", "<a href='".get_permalink($postId)."'>".$postpost_post_title."</a> <span style='font-size:70%'>(<a href='".get_edit_post_link($postId)."'>".__("Edit", $this->pluginID)."</a>)</span>", $m['nb'])."</p>" ; 
 								}
 							}
 						}
@@ -894,7 +928,7 @@ p.links_synthesis_entry {
 				foreach ($displayed_results as $r) {
 					$ligne++ ; 
 					$cel_url = new adminCell("<p><a href='".$r[0]."'>".$r[0]."</a></p>") ;
-					$cel_url->add_action(__("Recheck", $this->pluginID), "recheckURL('".$r[0]."');") ; 
+					$cel_url->add_action(__("Recheck", $this->pluginID), "recheckURL('".$r[4]."');") ; 
 					$cel_occurrence = new adminCell($r[1]) ;
 					$status_string = $this->http_status_code_string($r[2], true, true, $r[7]) ; 
 					$last_check = "" ; 
@@ -930,7 +964,7 @@ p.links_synthesis_entry {
 					}
 					$cel_status = new adminCell("<p>".$status_string."</p>".$redirect_url.$last_check.$first_failure) ;
 					if ($redirect_url!="") {
-						$cel_status->add_action(__("Change to the redirected URL", $this->pluginID), "changeURL('".$r[0]."','".$header_array['redirect_url']."',".$r[8].");") ; 
+						$cel_status->add_action(__("Change to the redirected URL", $this->pluginID), "changeURL('".$r[0]."','".$header_array['redirect_url']."',".$r[8].",".$r[4].");") ; 
 					}
 					$cel_meta_header = new adminCell("<div id='idmht_".$r[4]."' class='meta_close' onclick='return toogleMetatag(\"".$r[4]."\");'>".$r[3]."</div><div id='sm_mht_".$r[4]."' class='seemore_mht'><a href='#' onclick='return toogleMetatag(\"".$r[4]."\");'>".__("See more keywords...", $this->pluginID)."</a></div><div id='h_mht_".$r[4]."' class='hide_mht'><a href='#' onclick='toogleMetatag(\"".$r[4]."\");'>".__("Hide keywords...", $this->pluginID)."</a></div>") ;
 					$table->add_line(array($cel_url, $cel_occurrence, $cel_status, $cel_meta_header), $r[4]) ; 
@@ -939,6 +973,103 @@ p.links_synthesis_entry {
 				
 
 			$tabs->add_tab(__('All links',  $this->pluginID), ob_get_clean()) ; 	
+			
+			ob_start() ; 
+				$maxnb = 20 ; 
+				
+				$table = new adminTable(0, $maxnb, true, true) ;
+				$table->title(array(__('URL', $this->pluginID), __('Posts/Articles', $this->pluginID), __('Keywords', $this->pluginID))) ; 
+				
+				// Tous les resultats qui ont ŽtŽ ignorŽs
+				$results = $wpdb->get_results("SELECT * FROM ".$this->table_name." WHERE http_code='-2' ") ; 
+				
+				// On filtre les resultats
+				$filtered_results = array() ; 
+				$filter = explode(" ", $table->current_filter()) ; 
+				foreach ($results as $r) {
+					
+					// We then look if the url match the text entered in the field
+					$match = true ;
+					foreach ($filter as $fi) {
+						if ($fi!="") {
+							if ((strpos($r->title, $fi)===FALSE)&&(strpos($r->url, $fi)===FALSE)&&(strpos($r->http_code, $fi)===FALSE)) {
+								$match = false ; 
+								break ; 
+							}
+						}
+					}
+					
+					if ($match) {
+						$metatag = "" ; 
+						if (is_array(unserialize(str_replace("##&#39;##", "'", $r->metatag)))) {
+							foreach (unserialize(str_replace("##&#39;##", "'", $r->metatag)) as $k=>$m) {
+								$metatag .= "<p><i><strong>%meta_".$m['name']."%</strong></i> : ".$m['value']."</p>" ; 
+							}
+						}	
+						if ($r->http_code!=0) {					
+							if (is_array(unserialize(str_replace("##&#39;##", "'", $r->header)))) {
+								foreach (unserialize(str_replace("##&#39;##", "'", $r->header)) as $k=>$m) {
+									if (is_string($m)) {
+										$metatag .= "<p><i><strong>%head_".$k."%</strong></i> : ".$m."</p>" ; 
+									}
+								}
+							}
+						}
+						if ($r->title!="") {
+							$metatag = "<p><i><strong>%title%</strong></i> : ".$r->title."</p>".$metatag ;
+						}
+						$occurrence = "" ; 
+						$occurrence_array = "[" ; 
+						if (is_array(unserialize(str_replace("##&#39;##", "'", $r->occurrence)))) {
+							foreach (unserialize(str_replace("##&#39;##", "'", $r->occurrence)) as $m) {
+								if (is_array($m)) {
+									$postId = intval(str_replace("selectPostWithID", "", $m['id'])) ; 
+									$postpost = get_post($postId) ; 
+									$occurrence_array .= $postId."," ; 
+									if (!is_null($postpost)) {
+										$postpost_post_title = $postpost->post_title ; 
+									} else {
+										$postpost_post_title = __("(Missing page)",$this->pluginID) ; 
+									}
+									$occurrence .= "<p>".sprintf(__("%s in page %s (%s occurrences)", $this->pluginID), "<code>".$m['text']."</code>", "<a href='".get_permalink($postId)."'>".$postpost_post_title."</a> <span style='font-size:70%'>(<a href='".get_edit_post_link($postId)."'>".__("Edit", $this->pluginID)."</a>)</span>", $m['nb'])."</p>" ; 
+								}
+							}
+						}
+						$occurrence_array .= "-1]" ; 
+
+						$filtered_results[] = array($r->url, $occurrence, $r->http_code,  $metatag, $r->id, $r->last_check, $r->failure_first, $r->header, $occurrence_array) ; 
+					}
+				}
+				$count = count($filtered_results);
+				$table->set_nb_all_Items($count) ; 
+				
+				
+				// We order the posts page according to the choice of the user
+				if ($table->current_orderdir()=="ASC") {
+					$ordered_results = Utils::multicolumn_sort($filtered_results, $table->current_ordercolumn()-1, true) ;  
+				} else { 
+					$ordered_results = Utils::multicolumn_sort($filtered_results, $table->current_ordercolumn()-1, false) ;  
+				}
+
+				// on limite l'affichage en fonction des param
+				$displayed_results = array_slice($ordered_results,($table->current_page()-1)*$maxnb,$maxnb);
+				
+				// on affiche
+				$ligne = 0 ; 
+				foreach ($displayed_results as $r) {
+					$ligne++ ; 
+					$cel_url = new adminCell("<p><a href='".$r[0]."'>".$r[0]."</a></p>") ;
+					$cel_url->add_action(__("Do not Ignore", $this->pluginID), "doNotIgnoreURL(".$r[4].");") ; 
+					$cel_occurrence = new adminCell($r[1]) ;
+					
+					$cel_meta_header = new adminCell("<div id='idmht_".$r[4]."' class='meta_close' onclick='return toogleMetatag(\"".$r[4]."\");'>".$r[3]."</div><div id='sm_mht_".$r[4]."' class='seemore_mht'><a href='#' onclick='return toogleMetatag(\"".$r[4]."\");'>".__("See more keywords...", $this->pluginID)."</a></div><div id='h_mht_".$r[4]."' class='hide_mht'><a href='#' onclick='toogleMetatag(\"".$r[4]."\");'>".__("Hide keywords...", $this->pluginID)."</a></div>") ;
+					$table->add_line(array($cel_url, $cel_occurrence, $cel_meta_header), $r[4]) ; 
+				}
+				echo $table->flush() ; 
+				
+
+			$tabs->add_tab(__('Ignored Links',  $this->pluginID), ob_get_clean()) ; 	
+
 
 			ob_start() ; 
 				$params = new parametersSedLex($this, "tab-parameters") ; 
@@ -983,6 +1114,12 @@ p.links_synthesis_entry {
 				$params->add_comment(sprintf(__('Thus, %s and %s will be consider as identical (only for the display in the frontend)',  $this->pluginID), "<code>http://url/page.html#anchor1</code>", "<code>http://url/page.html#anchor2</code>")) ; 
 				$params->add_param('check_presence_anchor', __('When checking the link, check that the page contains an appropriate anchor:',  $this->pluginID)) ;  
 				
+				$params->add_title(__('Create Thumbnail of external Websites',  $this->pluginID)) ; 
+				$params->add_param('show_thb_onover', sprintf(__('Show the thumbnail if exists, when the mouse is over the link:',  $this->pluginID), "<a href='http://grabz.it/api/'>Grabz.it</a>"), "","", array("grabzit_Application_Key", "grabzit_Application_Secret")) ; 
+				$params->add_param('enable_grabzit', sprintf(__('Use %s API:',  $this->pluginID), "<a href='http://grabz.it/api/'>Grabz.it</a>"), "","", array("grabzit_Application_Key", "grabzit_Application_Secret")) ; 
+				$params->add_param('grabzit_Application_Key', __('Grabz.it Application Key:',  $this->pluginID)) ; 
+				$params->add_param('grabzit_Application_Secret', __('Grabz.it Application Secret:',  $this->pluginID)) ; 
+	
 				$params->add_title(__('Advanced options for the forced analysis',  $this->pluginID)) ; 
 				$params->add_param('type_page', __('Type of page to be analysed:',  $this->pluginID)) ; 
 				$params->add_param('max_page_to_check', __('Max number of post to be checked when an analysis is forced:',  $this->pluginID)) ; 
@@ -1001,6 +1138,8 @@ p.links_synthesis_entry {
 				$comment .= "<br>".sprintf(__("You may also used this : %s to replace an expression.",$this->pluginID), "<code>#REPLACE(word_to_find##word_to_replace##sentence)#</code>");
 				$comment .= "<br>".sprintf(__("You may also used this : %s to explode an expression according to a given delimiter and to keep the occurrence %s.",$this->pluginID), "<code>#EXPLODE(delimiter##sentence)(num)#</code>", "<code>delimiter</code>", "<code>num</code>" );
 				$params->add_comment(sprintf(__('In this HTML you may use: %s',  $this->pluginID), $comment)) ; 
+				
+				
 				
 				$params->flush() ; 
 				
@@ -1095,7 +1234,7 @@ p.links_synthesis_entry {
 							} else {
 								$postpost_post_title = __("(Missing page)",$this->pluginID) ; 
 							}
-							$occurrence .= "<p style='font-size:70%'>".sprintf(__("%s in page %s (%s occurrences)", $this->pluginID), "<span style='font-size:135%'>".$m['text']."</span>", "<a href='".get_permalink($postId)."'>".$postpost_post_title."</a>", $m['nb'])."</p>" ; 
+							$occurrence .= "<p>".sprintf(__("%s in page %s (%s occurrences)", $this->pluginID), "<code>".$m['text']."</code>", "<a href='".get_permalink($postId)."'>".$postpost_post_title."</a> <span style='font-size:70%'>(<a href='".get_edit_post_link($postId)."'>".__("Edit", $this->pluginID)."</a>)</span>", $m['nb'])."</p>" ; 
 						}
 					}
 				}
@@ -1122,9 +1261,9 @@ p.links_synthesis_entry {
 		foreach ($displayed_results as $r) {
 			$ligne++ ; 
 			$cel_url = new adminCell("<p id='url".$r[4]."'><a href='".$r[0]."'>".$r[0]."</a></p><p id='change".$r[4]."' style='display:none;'><input id='newURL".$r[4]."' type='text' value='".$r[0]."' style='width: 100%;'/><br/><input type='button' onclick='modifyURL2(\"".$r[0]."\",\"".$r[4]."\",".$r[8].");' value='".__("Modify", $this->pluginID)."' class='button-primary validButton'/> &nbsp; <input type='button' onclick='annul_modifyURL(".$r[4].")' value='".__("Cancel", $this->pluginID)."' class='button validButton'/></p>") ;
-			$cel_url->add_action(__("Recheck", $this->pluginID), "recheckURL('".$r[0]."');") ; 
+			$cel_url->add_action(__("Recheck", $this->pluginID), "recheckURL('".$r[4]."');") ; 
 			$cel_url->add_action(__("Modify", $this->pluginID), "modifyURL('".$r[4]."');") ; 
-			$cel_url->add_action(__("Ignore", $this->pluginID), "ignoreURL('".$r[0]."');") ; 
+			$cel_url->add_action(__("Ignore", $this->pluginID), "ignoreURL('".$r[4]."');") ; 
 					
 			$cel_occurrence = new adminCell($r[1]) ;
 			$status_string = $this->http_status_code_string($r[2], true, true, $r[7]) ; 
@@ -1161,7 +1300,7 @@ p.links_synthesis_entry {
 			}
 			$cel_status = new adminCell("<p>".$status_string."</p>".$redirect_url.$last_check.$first_failure) ;
 			if ($redirect_url!="") {
-				$cel_status->add_action(__("Change to the redirected URL", $this->pluginID), "changeURL('".$r[0]."','".$header_array['redirect_url']."',".$r[8].");") ; 
+				$cel_status->add_action(__("Change to the redirected URL", $this->pluginID), "changeURL('".$r[0]."','".$header_array['redirect_url']."',".$r[8].",".$r[4].");") ; 
 			}
 			$table->add_line(array($cel_url, $cel_occurrence, $cel_status), $r[4]) ; 
 		}
@@ -1293,17 +1432,21 @@ p.links_synthesis_entry {
 	
 	function checkLinksSynthesis($forced=false, $id_tocheck=-1) {
 		global $wpdb ; 
+		global $blog_id ; 
+		
+		
 		$max_num = $this->get_param('nb_check') ; 
 				
 		if ($id_tocheck==-1) {
-			$results = $wpdb->get_results("SELECT * FROM ".$this->table_name." WHERE ISNULL(last_check) ORDER BY RAND() LIMIT ".$max_num) ; 
+			// sectionner un au hasard mais qui n'est pas indiquŽ comme ˆ ignorer
+			$results = $wpdb->get_results("SELECT * FROM ".$this->table_name." WHERE ISNULL(last_check) AND http_code<>'-2' ORDER BY RAND() LIMIT ".$max_num) ; 
 		} else {
 			$results = $wpdb->get_results("SELECT * FROM ".$this->table_name." WHERE id='".$id_tocheck."'") ; 
 		}
 		if ( $results ) {
 			//nothing
 		} else {
-			$results = $wpdb->get_results("SELECT * FROM ".$this->table_name." WHERE (last_check < NOW() - INTERVAL ".$this->get_param('check_cron')." DAY AND http_code='200')  OR (last_check < NOW() - INTERVAL ".$this->get_param('check_cron_error')." DAY AND http_code<>'200') ORDER BY RAND() LIMIT ".$max_num) ; 
+			$results = $wpdb->get_results("SELECT * FROM ".$this->table_name." WHERE (last_check < NOW() - INTERVAL ".$this->get_param('check_cron')." DAY AND http_code='200')  OR (last_check < NOW() - INTERVAL ".$this->get_param('check_cron_error')." DAY AND http_code<>'200' AND http_code<>'-2') ORDER BY RAND() LIMIT ".$max_num) ; 
 			if ( $results ) {
 				//nothing
 			} else {
@@ -1317,92 +1460,116 @@ p.links_synthesis_entry {
 		}
 		
 		// on recupere le contenu du code distant
-		foreach ($results as $r) {			
-			$r->url = str_replace("&amp;", "&", $r->url) ; 
-			$redirection = 0 ; 
-			$real_code = -1 ; 
-			$redirect_link = "" ; 
-			$i=0 ; 
-			while($i<2) {
-				$i++ ; 
-				$content = wp_remote_get($r->url, array( 'timeout'=>13, 'redirection'=>$redirection, 'user-agent' => 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:23.0) Gecko/20131011 Firefox/23.0', 'headers'=>array('user-agent' => 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:23.0) Gecko/20131011 Firefox/23.0'))) ; 
-				if ($redirection!=0) {
-					break ; 
-				}
-				if ((!is_wp_error( $content ))&&(isset($content['response']['code']))&&($content['response']['code']>=300)&&($content['response']['code']<=399)) {
-					$real_code = $content['response']['code'] ; 
-					$redirection = 5 ; 
-					$redirect_link = $content['headers']['location'] ; 
-				} else {
-					$break ; 
-				}
-			}
-			if (!$forced) { 
-				echo "Update the link: ".$r->url."\n\r" ; 
-			}
-			if( is_wp_error( $content ) ) {
-   				$error_message = $content->get_error_message();
-   				echo "Something went wrong: $error_message" ;
-   				$header = mysql_real_escape_string($error_message) ; 
-   				echo $header ; 
-   				if (is_null($r->failure_first)) {
-					$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='0', failure_first=NOW(), header='".$header."'  WHERE id='".$r->id."'" ; 
-				} else {
-					$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='0', header='".$header."' WHERE id='".$r->id."'" ; 
-				}
-				$wpdb->query($update) ; 
-			}  else {
-				if ($redirect_link!="") {
-					$content['headers']['redirect_url'] = $redirect_link ; 
-				}
-				$res = $this->parser_general($content) ; 
-
-				if ($res['http_code']!=200) {
-					if (is_null($r->failure_first)) {
-						$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='".$res['http_code']."', failure_first=NOW() WHERE id='".$r->id."'" ; 
+		foreach ($results as $r) {	
+			// Si le code est -2, cela veux dire qu'on doit ignorer
+			if ($r->http_code.""!="-2") {	
+				$r->url = str_replace("&amp;", "&", $r->url) ; 
+				$redirection = 0 ; 
+				$real_code = -1 ; 
+				$redirect_link = "" ; 
+				$i=0 ; 
+				while($i<2) {
+					$i++ ; 
+					$content = wp_remote_get($r->url, array( 'timeout'=>13, 'redirection'=>$redirection, 'user-agent' => 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:23.0) Gecko/20131011 Firefox/23.0', 'headers'=>array('user-agent' => 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:23.0) Gecko/20131011 Firefox/23.0'))) ; 
+					if ($redirection!=0) {
+						break ; 
+					}
+					if ((!is_wp_error( $content ))&&(isset($content['response']['code']))&&($content['response']['code']>=300)&&($content['response']['code']<=399)) {
+						$real_code = $content['response']['code'] ; 
+						$redirection = 5 ; 
+						$redirect_link = $content['headers']['location'] ; 
 					} else {
-						$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='".$res['http_code']."' WHERE id='".$r->id."'" ; 
+						$break ; 
 					}
-				} else {
-					if ($real_code!=-1) {
-						$res['http_code'] = $real_code ; 
+				}
+				if (!$forced) { 
+					echo "Update the link: ".$r->url."\n\r" ; 
+				}
+				if( is_wp_error( $content ) ) {
+					$error_message = $content->get_error_message();
+					echo "Something went wrong: $error_message" ;
+					$header = esc_sql($error_message) ; 
+					echo $header ; 
+					if (is_null($r->failure_first)) {
+						$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='0', failure_first=NOW(), header='".$header."'  WHERE id='".$r->id."'" ; 
+					} else {
+						$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='0', header='".$header."' WHERE id='".$r->id."'" ; 
 					}
-					// On verifie, si on a une ancre, que celle ci se retrouve bien dans la page
-					if (($res['http_code']==200)&&($this->get_param('check_presence_anchor'))) {
-						$anchor = explode("#",$r->url) ; 
-						if (isset($anchor[1])) {
-							$content_body  = $content['body'] ; 
-							if ((!preg_match("/<a ([^>]*)name='".$anchor[1]."'([^>]*)>/u",$content_body))&&(!preg_match('/<a ([^>]*)name="'.$anchor[1].'"([^>]*)>/u',$content_body))) {
-								$res['http_code'] = 210 ; // no anchor found
+					$wpdb->query($update) ; 
+				}  else {
+					if ($redirect_link!="") {
+						$content['headers']['redirect_url'] = $redirect_link ; 
+					}
+					$res = $this->parser_general($content) ; 
+
+					if ($res['http_code']!=200) {
+						if (is_null($r->failure_first)) {
+							$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='".$res['http_code']."', failure_first=NOW() WHERE id='".$r->id."'" ; 
+						} else {
+							$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='".$res['http_code']."' WHERE id='".$r->id."'" ; 
+						}
+					} else {
+						if ($real_code!=-1) {
+							$res['http_code'] = $real_code ; 
+						}
+						// On verifie, si on a une ancre, que celle ci se retrouve bien dans la page
+						if (($res['http_code']==200)&&($this->get_param('check_presence_anchor'))) {
+							$anchor = explode("#",$r->url) ; 
+							if (isset($anchor[1])) {
+								$content_body  = $content['body'] ; 
+								if ((!preg_match("/<a ([^>]*)name='".$anchor[1]."'([^>]*)>/u",$content_body))&&(!preg_match('/<a ([^>]*)name="'.$anchor[1].'"([^>]*)>/u',$content_body))) {
+									$res['http_code'] = 210 ; // no anchor found
+								}
 							}
 						}
-					}
-					$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='".$res['http_code']."', failure_first=NULL, redirect_url='".$res['redirect_url']."', title='".str_replace("'", "&#39;", $res['title'])."', metatag='".str_replace("'", "##&#39;##", $res['metatag'])."', header='".str_replace("'", "##&#39;##", $res['header'])."' WHERE id='".$r->id."'" ; 
-				}
-				$wpdb->query($update) ; 
-			}
-			
-			// Remove the pages that does not exists anymore in occurrence
-			$current_occurrence = unserialize(str_replace("##&#39;##", "'", $r->occurrence)) ; 
-			if (is_array($current_occurrence)) {
-				$new_occurrence = array() ; 
-				foreach ($current_occurrence as $ao) {
-					$id_occ = intval(str_replace("selectPostWithID", "", $ao['id'])) ;
-					$post_occ = get_post ($id_occ) ; 
-					if ((!is_null($post_occ))&&($post_occ->post_status!="trash")) {
-						$new_occurrence[] = $ao ; 
-					}
-				}
-				$new_serialized_occurrence = str_replace("'", "##&#39;##", serialize($new_occurrence)) ;
-				if ($new_serialized_occurrence != $r->occurrence) {
-					if (count($new_occurrence)>0) {
-						$update = "UPDATE ".$this->table_name." SET occurrence='".$new_serialized_occurrence."' WHERE id='".$r->id."'" ; 
-					} else {
-						$update = "DELETE FROM ".$this->table_name." WHERE id='".$r->id."'" ; 
+						$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='".$res['http_code']."', failure_first=NULL, redirect_url='".$res['redirect_url']."', title='".str_replace("'", "&#39;", $res['title'])."', metatag='".str_replace("'", "##&#39;##", $res['metatag'])."', header='".str_replace("'", "##&#39;##", $res['header'])."' WHERE id='".$r->id."'" ; 
 					}
 					$wpdb->query($update) ; 
 				}
-			}	
+			
+				// Remove the pages that does not exists anymore in occurrence
+				$current_occurrence = unserialize(str_replace("##&#39;##", "'", $r->occurrence)) ; 
+				if (is_array($current_occurrence)) {
+					$new_occurrence = array() ; 
+					foreach ($current_occurrence as $ao) {
+						$id_occ = intval(str_replace("selectPostWithID", "", $ao['id'])) ;
+						$post_occ = get_post ($id_occ) ; 
+						if ((!is_null($post_occ))&&($post_occ->post_status!="trash")) {
+							$new_occurrence[] = $ao ; 
+						}
+					}
+					$new_serialized_occurrence = str_replace("'", "##&#39;##", serialize($new_occurrence)) ;
+					if ($new_serialized_occurrence != $r->occurrence) {
+						if (count($new_occurrence)>0) {
+							$update = "UPDATE ".$this->table_name." SET occurrence='".$new_serialized_occurrence."' WHERE id='".$r->id."'" ; 
+						} else {
+							$update = "DELETE FROM ".$this->table_name." WHERE id='".$r->id."'" ; 
+						}
+						$wpdb->query($update) ; 
+					}
+				}	
+				
+				// Screenshot of the external website
+				if ($this->get_param('enable_grabzit')) {
+					$grabzIt = new GrabzItClient($this->get_param('grabzit_Application_Key'), $this->get_param('grabzit_Application_Secret'));
+					$grabzIt->SetImageOptions($r->url); 
+							
+					// We create the folder for the img files
+					$blog_fold = "" ; 
+					if (is_multisite()) {
+						$blog_fold = $blog_id."/" ; 
+					}
+		
+					if (!is_dir(WP_CONTENT_DIR."/sedlex/links-synthesis/".$blog_fold)) {
+						@mkdir(WP_CONTENT_DIR."/sedlex/links-synthesis/".$blog_fold, 0777, true) ; 
+					}
+
+					$filepath = WP_CONTENT_DIR."/sedlex/links-synthesis/".$blog_fold."/img_".sha1($r->url).".jpg";
+										
+					$grabzIt->SaveTo($filepath);
+				}
+				
+			}
 		}
 		if (!$forced) {
 			die() ; 
@@ -1565,9 +1732,9 @@ p.links_synthesis_entry {
 	function recheckURL() {
 		global $wpdb ; 
 		
-		$oldURL = $_POST['oldURL'] ; 
+		$id = $_POST['id'] ; 
 
-		$update = "UPDATE ".$this->table_name." SET last_check=(NOW()- INTERVAL 400 DAY), http_code='-1' WHERE url='".$oldURL."'" ; 
+		$update = "UPDATE ".$this->table_name." SET last_check=(NOW()- INTERVAL 400 DAY), http_code='-1' WHERE id='".$id."'" ; 
 		$wpdb->query($update) ; 
 			
 		die() ; 
@@ -1582,9 +1749,27 @@ p.links_synthesis_entry {
 	function ignoreURL() {
 		global $wpdb ; 
 		
-		$oldURL = $_POST['oldURL'] ; 
+		$id = $_POST['id'] ; 
 
-		$update = "UPDATE ".$this->table_name." SET http_code='-2' WHERE url='".$oldURL."'" ; 
+		$update = "UPDATE ".$this->table_name." SET http_code='-2' WHERE id='".$id."'" ; 
+		
+		$wpdb->query($update) ; 
+			
+		die() ; 
+	}
+	
+	/** ====================================================================================================================================================
+	* Callback to not ignore the URL 
+	*
+	* @return array list of parsed element
+	*/
+	
+	function doNotIgnoreURL() {
+		global $wpdb ; 
+		
+		$id = $_POST['id'] ; 
+
+		$update = "UPDATE ".$this->table_name." SET http_code='-1' WHERE id='".$id."'" ; 
 		$wpdb->query($update) ; 
 			
 		die() ; 
@@ -1603,15 +1788,19 @@ p.links_synthesis_entry {
 		$newURL = $_POST['newURL'] ; 
 		$oldURL = $_POST['oldURL'] ; 
 		$idPost = $_POST['idPost'] ; 
+		$idLink = $_POST['id'] ; 
+		
 		if (is_array($idPost)) {
 			foreach ($idPost as $id) {
 				if ($id != -1) {
 					$postToReplace = get_post($id, ARRAY_A) ; 
 					$old = $postToReplace['post_content'] ; 
-					$postToReplace['post_content'] = str_replace($oldURL, $newURL, $postToReplace['post_content']) ; 
+					$postToReplace['post_content'] = str_replace("href='".$oldURL."'", "href='".$newURL."'", $postToReplace['post_content']) ; 
+					$postToReplace['post_content'] = str_replace('href="'.$oldURL.'"', 'href="'.$newURL.'"', $postToReplace['post_content']) ; 
 					if ($old==$postToReplace['post_content']) {
 						$oldURL = str_replace("&", "&amp;",$oldURL) ; 
-						$postToReplace['post_content'] = str_replace($oldURL, $newURL, $postToReplace['post_content']) ; 
+						$postToReplace['post_content'] = str_replace("href='".$oldURL."'", "href='".$newURL."'", $postToReplace['post_content']) ; 
+						$postToReplace['post_content'] = str_replace('href="'.$oldURL.'"', 'href="'.$newURL.'"', $postToReplace['post_content']) ; 
 						if ($old==$postToReplace['post_content']) {
 							echo sprintf(__("Cannot found '%s' in '%s'. There is probably an issue with special characters. Thus edit the article manually to modify this link.", $this->pluginID), $oldURL, $postToReplace['post_title']) ; 
 							die() ; 
@@ -1620,7 +1809,7 @@ p.links_synthesis_entry {
 					wp_update_post($postToReplace) ; 
 				}
 			}
-			$update = "DELETE FROM ".$this->table_name." WHERE url='".$oldURL."';" ; 
+			$update = "DELETE FROM ".$this->table_name." WHERE id='".$idLink."';" ; 
 			$wpdb->query($update) ; 
 			
 		} else {

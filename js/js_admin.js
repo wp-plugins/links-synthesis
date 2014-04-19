@@ -17,7 +17,7 @@ function modifyURL(idLigne) {
 }
 
 function modifyURL2(oldURL, idLigne, idPost) {
-	changeURL(oldURL, jQuery("#newURL"+idLigne).val(), idPost) ; 
+	changeURL(oldURL, jQuery("#newURL"+idLigne).val(), idPost, idLigne) ; 
 }
 
 function annul_modifyURL(idLigne) {
@@ -25,10 +25,10 @@ function annul_modifyURL(idLigne) {
 	jQuery("#change"+idLigne).hide();
 }
 
-function recheckURL(oldURL) {
+function recheckURL(idLink) {
 	var arguments = {
 		action: 'recheckURL', 
-		oldURL : oldURL
+		id : idLink
 	} 
 	//POST the data and append the results to the results div
 	jQuery.post(ajaxurl, arguments, function(response) {
@@ -37,17 +37,17 @@ function recheckURL(oldURL) {
 		if (x.status==0){
 			//Offline
 		} else if (x.status==500){
-			recheckURL(oldURL) ; 
+			recheckURL(idLink) ; 
 		} else {
 			alert("Error "+x.status) ; 
 		}
 	});   
 }
 
-function ignoreURL(oldURL) {
+function ignoreURL(idLink) {
 	var arguments = {
 		action: 'ignoreURL', 
-		oldURL : oldURL
+		id : idLink
 	} 
 	//POST the data and append the results to the results div
 	jQuery.post(ajaxurl, arguments, function(response) {
@@ -56,17 +56,37 @@ function ignoreURL(oldURL) {
 		if (x.status==0){
 			//Offline
 		} else if (x.status==500){
-			ignoreURL(oldURL) ; 
+			ignoreURL(idLink) ; 
 		} else {
 			alert("Error "+x.status) ; 
 		}
 	});   
 }
 
-function changeURL(oldURL, newURL, idPost) {
+function doNotIgnoreURL(idLink) {
+	var arguments = {
+		action: 'doNotIgnoreURL', 
+		id : idLink
+	} 
+	//POST the data and append the results to the results div
+	jQuery.post(ajaxurl, arguments, function(response) {
+		window.location.href=window.location.href ; 
+	}).error(function(x,e) { 
+		if (x.status==0){
+			//Offline
+		} else if (x.status==500){
+			doNotIgnoreURL(idLink) ; 
+		} else {
+			alert("Error "+x.status) ; 
+		}
+	});   
+}
+
+function changeURL(oldURL, newURL, idPost, idLink) {
 	var arguments = {
 		action: 'changeURL', 
 		idPost : idPost,
+		id : idLink,
 		oldURL : oldURL,
 		newURL : newURL
 	} 
@@ -81,7 +101,7 @@ function changeURL(oldURL, newURL, idPost) {
 		if (x.status==0){
 			//Offline
 		} else if (x.status==500){
-			changeURL(oldURL, newURL) ; 
+			changeURL(oldURL, newURL, idPost, idLink) ; 
 		} else {
 			alert("Error "+x.status) ; 
 		}
