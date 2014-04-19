@@ -2,8 +2,9 @@
 /**
 Plugin Name: Links synthesis
 Plugin Tag: tag
-Description: <p>This plugin enables a synthesis of all links in an article and retrieves data from them. </p><p>In this plugin, an index of all links in the page/post is created at the end of the page/post. </p><p>In addition, each link is periodically check to see if the link is still valid. </p><p>Finally, you may customize the display of each link thanks to metatag and headers.</p><p>This plugin is under GPL licence. </p>
+Description: <p>This plugin enables a synthesis of all links and the creation of thumbnail for links in an article and retrieves data from them. </p><p>In this plugin, an index of all links in the page/post is created at the end of the page/post. </p><p>In addition, each link is periodically check to see if the link is still valid. </p>p>In addition, each link is periodically check to see if the link is still valid. </p><p>You may dispaly a thumbnail of the URL when the user move its mouse over the link.</p><p>This plugin is under GPL licence. </p>
 Version: 1.2.0
+
 
 Framework: SL_Framework
 Author: sedLex

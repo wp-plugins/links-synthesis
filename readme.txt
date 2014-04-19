@@ -9,19 +9,19 @@ Requires at least: 3.0
 Tested up to: 3.9
 Stable tag: trunk
 
-This plugin enables a synthesis  and the creation of thumbnails of all links in an article and retrieves data from them. 
+This plugin enables a synthesis of all links and the creation of thumbnail for links in an article and retrieves data from them. 
 
 == Description ==
 
-This plugin enables a synthesis  and the creation of thumbnails of all links in an article and retrieves data from them. 
+This plugin enables a synthesis of all links and the creation of thumbnail for links in an article and retrieves data from them. 
 
 In this plugin, an index of all links in the page/post is created at the end of the page/post. 
 
 In addition, each link is periodically check to see if the link is still valid. 
 
-When the mouse is over a link, a thumbnail may be displayed
+p&gt;In addition, each link is periodically check to see if the link is still valid. 
 
-Finally, you may customize the display of each link thanks to metatag and headers.
+You may dispaly a thumbnail of the URL when the user move its mouse over the link.
 
 This plugin is under GPL licence. 
 
@@ -92,4 +92,4 @@ Have fun !
 == Frequently Asked Questions ==
 
  
-InfoVersion:2f7e7b7df21aeb666786a31b3a737588
+InfoVersion:c611222b11174d6366f93f354971c57a
