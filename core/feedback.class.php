@@ -138,7 +138,8 @@ if (!class_exists("feedbackSL")) {
 			$options = get_option($pluginID.'_options'); 
 			// mask the password
 			$new_option = array() ; 
-			$new_plugin_copy = $pluginID::getInstance() ; 
+			$new_plugin_copy = call_user_func(array($pluginID, 'getInstance'));
+
 			foreach ($options as $o=>$v) {
 				if ($new_plugin_copy->get_default_option($o)!=="[password]") {
 					$new_option[$o] = $v ; 
