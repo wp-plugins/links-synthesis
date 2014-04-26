@@ -2,10 +2,8 @@
 /**
 Plugin Name: Links synthesis
 Plugin Tag: tag
-Description: <p>This plugin enables a synthesis of all links and the creation of thumbnail for links in an article and retrieves data from them. </p><p>In this plugin, an index of all links in the page/post is created at the end of the page/post. </p><p>In addition, each link is periodically check to see if the link is still valid. </p>p>In addition, each link is periodically check to see if the link is still valid. </p><p>You may dispaly a thumbnail of the URL when the user move its mouse over the link.</p><p>This plugin is under GPL licence. </p>
-Version: 1.2.0
-
-
+Description: <p>This plugin enables a synthesis of all links and the creation of thumbnail for links in an article and retrieves data from them. </p><p>In this plugin, an index of all links in the page/post is created at the end of the page/post. </p><p>In addition, each link is periodically check to see if the link is still valid. </p>p>In addition, each link is periodically check to see if the link is still valid. </p><p>You may display a thumbnail of the URL when the user move its mouse over the link.</p><p>This plugin is under GPL licence. </p>
+Version: 1.2.1
 Framework: SL_Framework
 Author: sedLex
 Author URI: http://www.sedlex.fr/
@@ -411,7 +409,11 @@ class links_synthesis extends pluginSedLex {
 		$reftable = ob_get_clean() ;
 		 
 		if ( ($this->get_param('display')) || ( ($this->get_param('display_admin'))&&(is_user_logged_in()) ) ) {
-			$content = $content.str_replace("%links_synthesis%", $reftable, $this->get_param('html')) ; 
+			if (trim($reftable)!="") {
+				$content = $content.str_replace("%links_synthesis%", $reftable, $this->get_param('html')) ; 
+			} else {
+				// nothing
+			}
 		} else {
 			$vide = $reftable ; 
 		}
@@ -619,9 +621,18 @@ class links_synthesis extends pluginSedLex {
 				$blog_fold = $blog_id."/" ; 
 			}
 	
-			if (is_file(WP_CONTENT_DIR."/sedlex/links-synthesis/".$blog_fold."/img_".sha1($matches[2]).".jpg")) {
-				$lien_final = '<a'.$matches[1].'href="'.$matches[2].'"'.$matches[3].' onmouseover="jQuery(\'.img_'.sha1($matches[2]).'\').fadeIn(\'slow\');" onmouseout="jQuery(\'.img_'.sha1($matches[2]).'\').fadeOut(\'slow\');">'.$matches[4].'</a>' ; 
-				$lien_final .= '<img class="thumbnail_url_LS img_'.sha1($matches[2]).'" src="'.WP_CONTENT_URL."/sedlex/links-synthesis/".$blog_fold."/img_".sha1($matches[2]).".jpg".'" />' ; 
+			if ($this->get_param('enable_grabzit')) {
+				if (is_file(WP_CONTENT_DIR."/sedlex/links-synthesis/".$blog_fold."/img_".sha1($matches[2]).".jpg")) {
+					$lien_final = '<a'.$matches[1].'href="'.$matches[2].'"'.$matches[3].' onmouseover="jQuery(\'.img_'.sha1($matches[2]).'\').fadeIn(\'slow\');" onmouseout="jQuery(\'.img_'.sha1($matches[2]).'\').fadeOut(\'slow\');">'.$matches[4].'</a>' ; 
+					$lien_final .= '<img class="thumbnail_url_LS img_'.sha1($matches[2]).'" src="'.WP_CONTENT_URL."/sedlex/links-synthesis/".$blog_fold."/img_".sha1($matches[2]).".jpg".'" />' ; 
+				}
+			}
+			
+			if ($this->get_param('enable_wkhtmltoimage')) {
+				if (is_file(WP_CONTENT_DIR."/sedlex/links-synthesis/".$blog_fold."wk_th_".sha1($matches[2].$this->get_param('enable_wkhtmltoimage_winw').$this->get_param('enable_wkhtmltoimage_w').$this->get_param('enable_wkhtmltoimage_h')).".jpg")) {
+					$lien_final = '<a'.$matches[1].'href="'.$matches[2].'"'.$matches[3].' onmouseover="jQuery(\'.img_'.sha1($matches[2]).'\').fadeIn(\'slow\');" onmouseout="jQuery(\'.img_'.sha1($matches[2]).'\').fadeOut(\'slow\');">'.$matches[4].'</a>' ; 
+					$lien_final .= '<img class="thumbnail_url_LS img_'.sha1($matches[2]).'" src="'.WP_CONTENT_URL."/sedlex/links-synthesis/".$blog_fold."wk_th_".sha1($matches[2].$this->get_param('enable_wkhtmltoimage_winw').$this->get_param('enable_wkhtmltoimage_w').$this->get_param('enable_wkhtmltoimage_h')).".jpg".'" />' ; 
+				}
 			}
 		}
   		
@@ -749,6 +760,11 @@ p.links_synthesis_entry {
 			case 'enable_grabzit' : return false ; break ;  
 			case 'grabzit_Application_Key': return "" ; break ; 
 			case 'grabzit_Application_Secret': return "" ; break ; 
+
+			case 'enable_wkhtmltoimage' : return false ; break ;  
+			case 'enable_wkhtmltoimage_winw' : return 1024 ; break ;  
+			case 'enable_wkhtmltoimage_w' : return 300 ; break ;  
+			case 'enable_wkhtmltoimage_h' : return 300 ; break ;  
 			
 		}
 		return null ;
@@ -765,6 +781,11 @@ p.links_synthesis_entry {
 		global $wpdb;
 		global $blog_id ; 
 		
+		$blog_fold = "" ; 
+		if (is_multisite()) {
+			$blog_fold = $blog_id."/" ; 
+		}
+
 		SL_Debug::log(get_class(), "Print the configuration page." , 4) ; 
 				
 		?>
@@ -928,7 +949,28 @@ p.links_synthesis_entry {
 				$ligne = 0 ; 
 				foreach ($displayed_results as $r) {
 					$ligne++ ; 
-					$cel_url = new adminCell("<p><a href='".$r[0]."'>".$r[0]."</a></p>") ;
+					
+					$add_img = "" ; 
+					
+					if ($this->get_param('enable_grabzit')) {
+						if (is_file(WP_CONTENT_DIR."/sedlex/links-synthesis/".$blog_fold."/img_".sha1($r[0]).".jpg")) {
+							$add_img .= '<p style="text-align:center">'.sprintf(__("Thumbnail generated by %s", $this->pluginID), "<code>Grabz.it</code>").'</p>' ; 
+							$add_img .= '<p style="text-align:center"><img src="'.WP_CONTENT_URL."/sedlex/links-synthesis/".$blog_fold."/img_".sha1($r[0]).".jpg".'" /></p>' ; 
+						} else {
+							$add_img .= '<p style="text-align:center; color:#999999;">'.sprintf(__("Thumbnail not yet generated by %s", $this->pluginID), "<code>Grabz.it</code>").'</p>' ; 
+						}
+					}
+			
+					if ($this->get_param('enable_wkhtmltoimage')) {
+						if (is_file(WP_CONTENT_DIR."/sedlex/links-synthesis/".$blog_fold."wk_th_".sha1($r[0].$this->get_param('enable_wkhtmltoimage_winw').$this->get_param('enable_wkhtmltoimage_w').$this->get_param('enable_wkhtmltoimage_h')).".jpg")) {
+							$add_img .= '<p style="text-align:center">'.sprintf(__("Thumbnail generated by %s", $this->pluginID), "<code>wkHtmlToImage</code>").'</p>' ; 
+							$add_img .= '<p style="text-align:center"><img src="'.WP_CONTENT_URL."/sedlex/links-synthesis/".$blog_fold."wk_th_".sha1($r[0].$this->get_param('enable_wkhtmltoimage_winw').$this->get_param('enable_wkhtmltoimage_w').$this->get_param('enable_wkhtmltoimage_h')).".jpg".'" /></p>' ; 
+						} else {
+							$add_img .= '<p style="text-align:center; color:#999999;">'.sprintf(__("Thumbnail not yet generated by %s", $this->pluginID), "<code>wkHtmlToImage</code>").'</p>' ; 
+						}
+					}
+					
+					$cel_url = new adminCell("<p><a href='".$r[0]."'>".$r[0]."</a></p>".$add_img) ;
 					$cel_url->add_action(__("Recheck", $this->pluginID), "recheckURL('".$r[4]."');") ; 
 					$cel_occurrence = new adminCell($r[1]) ;
 					$status_string = $this->http_status_code_string($r[2], true, true, $r[7]) ; 
@@ -1059,7 +1101,27 @@ p.links_synthesis_entry {
 				$ligne = 0 ; 
 				foreach ($displayed_results as $r) {
 					$ligne++ ; 
-					$cel_url = new adminCell("<p><a href='".$r[0]."'>".$r[0]."</a></p>") ;
+					
+					$add_img = "" ; 
+					if ($this->get_param('enable_grabzit')) {
+						if (is_file(WP_CONTENT_DIR."/sedlex/links-synthesis/".$blog_fold."/img_".sha1($r[0]).".jpg")) {
+							$add_img .= '<p style="text-align:center">'.sprintf(__("Thumbnail generated by %s", $this->pluginID), "<code>Grabz.it</code>").'</p>' ; 
+							$add_img .= '<p style="text-align:center"><img src="'.WP_CONTENT_URL."/sedlex/links-synthesis/".$blog_fold."/img_".sha1($r[0]).".jpg".'" /></p>' ; 
+						} else {
+							$add_img .= '<p style="text-align:center; color:#999999;">'.sprintf(__("Thumbnail not yet generated by %s", $this->pluginID), "<code>Grabz.it</code>").'</p>' ; 
+						}
+					}
+			
+					if ($this->get_param('enable_wkhtmltoimage')) {
+						if (is_file(WP_CONTENT_DIR."/sedlex/links-synthesis/".$blog_fold."wk_th_".sha1($r[0].$this->get_param('enable_wkhtmltoimage_winw').$this->get_param('enable_wkhtmltoimage_w').$this->get_param('enable_wkhtmltoimage_h')).".jpg")) {
+							$add_img .= '<p style="text-align:center">'.sprintf(__("Thumbnail generated by %s", $this->pluginID), "<code>wkHtmlToImage</code>").'</p>' ; 
+							$add_img .= '<p style="text-align:center"><img src="'.WP_CONTENT_URL."/sedlex/links-synthesis/".$blog_fold."wk_th_".sha1($r[0].$this->get_param('enable_wkhtmltoimage_winw').$this->get_param('enable_wkhtmltoimage_w').$this->get_param('enable_wkhtmltoimage_h')).".jpg".'" /></p>' ; 
+						} else {
+							$add_img .= '<p style="text-align:center; color:#999999;">'.sprintf(__("Thumbnail not yet generated by %s", $this->pluginID), "<code>wkHtmlToImage</code>").'</p>' ; 
+						}
+					}
+					
+					$cel_url = new adminCell("<p><a href='".$r[0]."'>".$r[0]."</a></p>".$add_img) ;
 					$cel_url->add_action(__("Do not Ignore", $this->pluginID), "doNotIgnoreURL(".$r[4].");") ; 
 					$cel_occurrence = new adminCell($r[1]) ;
 					
@@ -1116,10 +1178,30 @@ p.links_synthesis_entry {
 				$params->add_param('check_presence_anchor', __('When checking the link, check that the page contains an appropriate anchor:',  $this->pluginID)) ;  
 				
 				$params->add_title(__('Create Thumbnail of external Websites',  $this->pluginID)) ; 
-				$params->add_param('show_thb_onover', sprintf(__('Show the thumbnail if exists, when the mouse is over the link:',  $this->pluginID), "<a href='http://grabz.it/api/'>Grabz.it</a>"), "","", array("grabzit_Application_Key", "grabzit_Application_Secret")) ; 
+				$params->add_param('show_thb_onover', __('Show the thumbnail if exists, when the mouse is over the link:',  $this->pluginID)) ; 
+				$params->add_comment(__('You may use one of the following API or binary (please selected only one).',  $this->pluginID)) ; 
 				$params->add_param('enable_grabzit', sprintf(__('Use %s API:',  $this->pluginID), "<a href='http://grabz.it/api/'>Grabz.it</a>"), "","", array("grabzit_Application_Key", "grabzit_Application_Secret")) ; 
 				$params->add_param('grabzit_Application_Key', __('Grabz.it Application Key:',  $this->pluginID)) ; 
 				$params->add_param('grabzit_Application_Secret', __('Grabz.it Application Secret:',  $this->pluginID)) ; 
+		
+				$upload_dir = wp_upload_dir() ;
+				$command_wk =  $upload_dir['basedir']."/sedlex/wkhtmltox/bin/wkhtmltoimage" ; 
+		
+				$params->add_param('enable_wkhtmltoimage', sprintf(__('Use the executable %s:',  $this->pluginID), "<a href='http://wkhtmltopdf.org/'>Wkhtmltoimage</a>"), "","", array("enable_wkhtmltoimage_h", "enable_wkhtmltoimage_w", "enable_wkhtmltoimage_winw")) ; 				
+				$params->add_comment(sprintf(__('To use this option, you should download the binary of %s compatible with your system and install it in %s',  $this->pluginID), "<a href='http://wkhtmltopdf.org/'>Wkhtmltoimage</a>", "<code>$command_wk</code>")) ; 
+				if (is_file($command_wk)) {
+					$res = $this->wkurltoimage('http://www.google.com/', 1024, 100, 100) ; 
+					if ($res['success']) {
+						$params->add_comment(sprintf(__('If you see an image here, it mean it works %s',  $this->pluginID), "<img src='".$res["thumb"]."'>")) ; 
+					} else {
+						$params->add_comment(sprintf(__('There is a problem with the installation: %s',  $this->pluginID), "<code>".$res["msg"]."</code>")) ; 
+					}
+				} else {
+					$params->add_comment(sprintf(__('For now, it appears that the file %s does not exist. This option cannot work if activated.',  $this->pluginID), "<code>$command_wk</code>")) ; 
+				}
+				$params->add_param('enable_wkhtmltoimage_winw', __('Width of the window for the screenshot:',  $this->pluginID)) ; 
+				$params->add_param('enable_wkhtmltoimage_w', __('Width of the thumbnail:',  $this->pluginID)) ; 
+				$params->add_param('enable_wkhtmltoimage_h', __('Height of the thumbnail:',  $this->pluginID)) ; 
 	
 				$params->add_title(__('Advanced options for the forced analysis',  $this->pluginID)) ; 
 				$params->add_param('type_page', __('Type of page to be analysed:',  $this->pluginID)) ; 
@@ -1180,6 +1262,90 @@ p.links_synthesis_entry {
 		<?php
 	}
 
+	/** ====================================================================================================================================================
+	* Get an image based on url
+	*
+	* @return void
+	*/
+
+	function wkurltoimage($url, $winw=0, $cropw=0, $croph=0) {
+		global $blog_id ; 
+	
+		// We create the folder for the img files
+		$blog_fold = "" ; 
+		if (is_multisite()) {
+			$blog_fold = $blog_id."/" ; 
+		}
+		
+		if (!is_dir(WP_CONTENT_DIR."/sedlex/links-synthesis/".$blog_fold)) {
+			@mkdir(WP_CONTENT_DIR."/sedlex/links-synthesis/".$blog_fold, 0777, true) ; 
+		}
+		
+		$upload_dir = wp_upload_dir() ;
+		$command_wk =  $upload_dir['basedir']."/sedlex/wkhtmltox/bin/wkhtmltoimage" ; 
+		$path_img = WP_CONTENT_DIR."/sedlex/links-synthesis/".$blog_fold."wk_".sha1($url.$winw.$cropw.$croph).".jpg" ; 
+		$url_img = WP_CONTENT_URL."/sedlex/links-synthesis/".$blog_fold."wk_".sha1($url.$winw.$cropw.$croph).".jpg" ;
+
+		$path_th = WP_CONTENT_DIR."/sedlex/links-synthesis/".$blog_fold."wk_th_".sha1($url.$winw.$cropw.$croph).".jpg" ; 
+		$url_th = WP_CONTENT_URL."/sedlex/links-synthesis/".$blog_fold."wk_th_".sha1($url.$winw.$cropw.$croph).".jpg" ;
+		
+		if (is_file($path_img)) {
+			@unlink($path_img) ; 
+		}
+
+		if (is_file($command_wk)){
+			$additional_cmd = "" ; 
+			if ($winw!=0) {
+				$additional_cmd .= " --width ".$winw ; 
+			}
+			if ($cropw==0) {
+				$cropw = 200 ; 
+			}
+			if ($croph==0) {
+				$croph = 200 ; 
+			}
+			// Local file for wkhtmltoimage
+			$command = $command_wk.$additional_cmd." ".$url." ".$path_img ; 
+			$str = exec($command, $output, $return) ; 
+			
+			// on teste l'existence du fichier
+			if (is_file($path_img)) {
+			    list($width, $height) = getimagesize($path_img);
+			    $myImage = imagecreatefromjpeg($path_img);
+				
+				// Si le ratio de largeur est plus grand que le ratio de hauteur, 
+				// cela signifie que la contrainte sera la largeur
+				if ($cropw/$width > $croph/$height) {
+				  $x = 0;
+				  $origin_w = $width;
+				  $origin_h = $croph*$width/$cropw ;
+				// Sinon, 
+				// cela signifie que la contrainte sera la hauteur
+				} else {
+				  $origin_w = $cropw*$height/$croph ;
+				  $origin_h = $height;
+				  $x = ($width-$origin_w)/2;
+				}
+
+				// copying the part into thumbnail
+				
+				$thumb = imagecreatetruecolor($cropw, $croph);
+				//imagecopyresampled($thumb, $myImage, 0, 0, $x, $y, $cropw, $croph, $smallestSide, $smallestSide);
+				imagecopyresampled($thumb, $myImage, 0, 0, $x, 0, $cropw, $croph, $origin_w, $origin_h);
+
+				if (imagejpeg ($thumb, $path_th, 92)) {
+					return array("success"=>true, "url"=>$url_img, "thumb"=>$url_th) ; 
+				} else {
+					return array("success"=>false, "msg"=>sprintf(__("%s has failed.", $this->pluginID), "imagejpeg")) ; 
+				}
+				
+			} else { 
+				return array("success"=>false, "msg"=>sprintf(__("%s has failed: %s.", $this->pluginID), "<code>".$command_wk."</code>", "<code>".implode(" - ",$output)."</code>")) ; 
+			}
+		} else {
+			return array("success"=>false, "msg"=>sprintf(__("%s does not exist.", $this->pluginID), "<code>".$command_wk."</code>")) ; 
+		}
+	}
 	
 	/** ====================================================================================================================================================
 	* Display the error
@@ -1189,6 +1355,13 @@ p.links_synthesis_entry {
 	
 	function displayErrorTable() {
 		global $wpdb ; 
+		global $blog_id ; 
+		
+		$blog_fold = "" ; 
+		if (is_multisite()) {
+			$blog_fold = $blog_id."/" ; 
+		}
+
 		$maxnb = 20 ; 
 
 		$synthesis = "<p>".__("All the links are showed here.", $this->pluginID)."</p>" ; 
@@ -1261,7 +1434,27 @@ p.links_synthesis_entry {
 		$ligne = 0 ; 
 		foreach ($displayed_results as $r) {
 			$ligne++ ; 
-			$cel_url = new adminCell("<p id='url".$r[4]."'><a href='".$r[0]."'>".$r[0]."</a></p><p id='change".$r[4]."' style='display:none;'><input id='newURL".$r[4]."' type='text' value='".$r[0]."' style='width: 100%;'/><br/><input type='button' onclick='modifyURL2(\"".$r[0]."\",\"".$r[4]."\",".$r[8].");' value='".__("Modify", $this->pluginID)."' class='button-primary validButton'/> &nbsp; <input type='button' onclick='annul_modifyURL(".$r[4].")' value='".__("Cancel", $this->pluginID)."' class='button validButton'/></p>") ;
+			
+			$add_img = "" ; 
+			if ($this->get_param('enable_grabzit')) {
+				if (is_file(WP_CONTENT_DIR."/sedlex/links-synthesis/".$blog_fold."/img_".sha1($r[0]).".jpg")) {
+					$add_img .= '<p style="text-align:center">'.sprintf(__("Thumbnail generated by %s", $this->pluginID), "<code>Grabz.it</code>").'</p>' ; 
+					$add_img .= '<p style="text-align:center"><img src="'.WP_CONTENT_URL."/sedlex/links-synthesis/".$blog_fold."/img_".sha1($r[0]).".jpg".'" /></p>' ; 
+				} else {
+					$add_img .= '<p style="text-align:center; color:#999999;">'.sprintf(__("Thumbnail not yet generated by %s", $this->pluginID), "<code>Grabz.it</code>").'</p>' ; 
+				}
+			}
+	
+			if ($this->get_param('enable_wkhtmltoimage')) {
+				if (is_file(WP_CONTENT_DIR."/sedlex/links-synthesis/".$blog_fold."wk_th_".sha1($r[0].$this->get_param('enable_wkhtmltoimage_winw').$this->get_param('enable_wkhtmltoimage_w').$this->get_param('enable_wkhtmltoimage_h')).".jpg")) {
+					$add_img .= '<p style="text-align:center">'.sprintf(__("Thumbnail generated by %s", $this->pluginID), "<code>wkHtmlToImage</code>").'</p>' ; 
+					$add_img .= '<p style="text-align:center"><img src="'.WP_CONTENT_URL."/sedlex/links-synthesis/".$blog_fold."wk_th_".sha1($r[0].$this->get_param('enable_wkhtmltoimage_winw').$this->get_param('enable_wkhtmltoimage_w').$this->get_param('enable_wkhtmltoimage_h')).".jpg".'" /></p>' ; 
+				} else {
+					$add_img .= '<p style="text-align:center; color:#999999;">'.sprintf(__("Thumbnail not yet generated by %s", $this->pluginID), "<code>wkHtmlToImage</code>").'</p>' ; 
+				}
+			}
+			
+			$cel_url = new adminCell("<p id='url".$r[4]."'><a href='".$r[0]."'>".$r[0]."</a></p><p id='change".$r[4]."' style='display:none;'><input id='newURL".$r[4]."' type='text' value='".$r[0]."' style='width: 100%;'/><br/><input type='button' onclick='modifyURL2(\"".$r[0]."\",\"".$r[4]."\",".$r[8].");' value='".__("Modify", $this->pluginID)."' class='button-primary validButton'/> &nbsp; <input type='button' onclick='annul_modifyURL(".$r[4].")' value='".__("Cancel", $this->pluginID)."' class='button validButton'/></p>".$add_img) ;
 			$cel_url->add_action(__("Recheck", $this->pluginID), "recheckURL('".$r[4]."');") ; 
 			$cel_url->add_action(__("Modify", $this->pluginID), "modifyURL('".$r[4]."');") ; 
 			$cel_url->add_action(__("Ignore", $this->pluginID), "ignoreURL('".$r[4]."');") ; 
@@ -1568,6 +1761,11 @@ p.links_synthesis_entry {
 					$filepath = WP_CONTENT_DIR."/sedlex/links-synthesis/".$blog_fold."/img_".sha1($r->url).".jpg";
 										
 					$grabzIt->SaveTo($filepath);
+				}
+				
+				// ScreenShot with wkhtmltoimage
+				if ($this->get_param('enable_wkhtmltoimage')) {
+					$this->wkurltoimage($r->url, $this->get_param('enable_wkhtmltoimage_winw'), $this->get_param('enable_wkhtmltoimage_w'), $this->get_param('enable_wkhtmltoimage_h')) ; 
 				}
 				
 			}
