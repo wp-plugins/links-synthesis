@@ -1,1 +1,1 @@
-ajouter un systÃ¨me de cache des pages
+Ne pas faire dÃ©pendre du fait que l\'image est affichÃ© pour gÃ©nÃ©rer une erreur

@@ -6,7 +6,7 @@ Author URI: http://www.sedlex.fr/
 Plugin URI: http://wordpress.org/plugins/links-synthesis/
 Tags: tag
 Requires at least: 3.0
-Tested up to: 3.9
+Tested up to: 3.9.1
 Stable tag: trunk
 
 This plugin enables a synthesis of all links and the creation of thumbnail for links in an article and retrieves data from them. 
@@ -21,7 +21,7 @@ In addition, each link is periodically check to see if the link is still valid.
 
 p&gt;In addition, each link is periodically check to see if the link is still valid. 
 
-You may dispaly a thumbnail of the URL when the user move its mouse over the link.
+You may display a thumbnail of the URL when the user move its mouse over the link.
 
 This plugin is under GPL licence. 
 
@@ -58,6 +58,11 @@ Have fun !
 
 == Changelog ==
 
+= 1.2.2 = 
+* NEW: Only one image is displayed when similar links are present
+* NEW: even ignored links are ckecked 
+* NEW: How to tab
+
 = 1.2.1 = 
 * NEW: Wkhtmltoimage may be used to create thumbnails (no external API need to create the image)
 * NEW: do not display the table if no link is used in the page
@@ -90,4 +95,4 @@ Have fun !
 == Frequently Asked Questions ==
 
  
-InfoVersion:f7432d50d2ba9b9b9f8bb321f772e522
+InfoVersion:41f8244dcd123655695d69b1d4e61172a18e2c93

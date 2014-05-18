@@ -3,7 +3,7 @@
 Plugin Name: Links synthesis
 Plugin Tag: tag
 Description: <p>This plugin enables a synthesis of all links and the creation of thumbnail for links in an article and retrieves data from them. </p><p>In this plugin, an index of all links in the page/post is created at the end of the page/post. </p><p>In addition, each link is periodically check to see if the link is still valid. </p>p>In addition, each link is periodically check to see if the link is still valid. </p><p>You may display a thumbnail of the URL when the user move its mouse over the link.</p><p>This plugin is under GPL licence. </p>
-Version: 1.2.1
+Version: 1.2.2
 Framework: SL_Framework
 Author: sedLex
 Author URI: http://www.sedlex.fr/
@@ -70,6 +70,7 @@ class links_synthesis extends pluginSedLex {
 		register_uninstall_hook(__FILE__, array('links_synthesis','uninstall_removedata'));
 		
 		$this->count_nb = 0 ; 
+		$this->img_count = 1 ; 
 		$this->table_links = array() ; 
 		add_action( 'wp_ajax_nopriv_checkLinksSynthesis', array( $this, 'checkLinksSynthesis'));
 		add_action( 'wp_ajax_checkLinksSynthesis', array( $this, 'checkLinksSynthesis'));
@@ -115,7 +116,7 @@ class links_synthesis extends pluginSedLex {
 	*/
 	
 	public function _update() {
-		SL_Debug::log(get_class(), "Update the plugin." , 4) ; 
+		SLFramework_Debug::log(get_class(), "Update the plugin." , 4) ; 
 	}
 	
 	/**====================================================================================================================================================
@@ -535,11 +536,11 @@ class links_synthesis extends pluginSedLex {
   		}
   		
   		// On regarde si on doit nettoyer le lien pour supprimer l'ancre (pour l'affichage uniquement)
-  		$key_url = md5($matches[2]) ; 
+  		$key_url = sha1($matches[2]) ; 
   		$short_url = $matches[2] ; 
   		if ($this->get_param('handle_anchor')) {
   			$tmp = explode("#",$matches[2]) ; 
-  			$key_url = md5($tmp[0]) ;
+  			$key_url = sha1($tmp[0]) ;
   			$short_url = $tmp[0] ; 
   		}
   		
@@ -575,7 +576,7 @@ class links_synthesis extends pluginSedLex {
    		
    		// We put the anchor in the list (but hidden)
    		$ancre_status = "" ; 
-   		if (!isset($this->table_links[md5($matches[2])])) {
+   		if (!isset($this->table_links[sha1($matches[2])])) {
   	   		$result = $wpdb->get_results("SELECT * FROM ".$this->table_name." WHERE url='".str_replace("'", "&#39;", $matches[2])."' LIMIT 1 ; ") ; 
 			$ancre_status = "" ; 
 			if ( $result ) {
@@ -586,9 +587,9 @@ class links_synthesis extends pluginSedLex {
 				} else {
 					$ancre_status = $this->http_status_code_string($result[0]->http_code, true, true); 
 				}
-				$this->table_links[md5($matches[2])] = array("anchor"=>true, "num"=>-1, "occ"=> array(), "url"=>$matches[2], "title"=>$result[0]->title, "status"=>$ancre_status, "metatag"=>$result[0]->metatag, "header"=>$result[0]->header, "http_code"=>$result[0]->http_code) ; 				
+				$this->table_links[sha1($matches[2])] = array("anchor"=>true, "num"=>-1, "occ"=> array(), "url"=>$matches[2], "title"=>$result[0]->title, "status"=>$ancre_status, "metatag"=>$result[0]->metatag, "header"=>$result[0]->header, "http_code"=>$result[0]->http_code) ; 				
 			} else {
-				$this->table_links[md5($matches[2])] = array("anchor"=>true, "num"=>-1, "occ"=> array(), "url"=>$matches[2], "title"=>"", "status"=>$this->http_status_code_string(-1, true, true) , "metatag"=>serialize(array()), "header"=>serialize(array()), "http_code"=>-1) ; 				
+				$this->table_links[sha1($matches[2])] = array("anchor"=>true, "num"=>-1, "occ"=> array(), "url"=>$matches[2], "title"=>"", "status"=>$this->http_status_code_string(-1, true, true) , "metatag"=>serialize(array()), "header"=>serialize(array()), "http_code"=>-1) ; 				
 				$wpdb->query("INSERT INTO ".$this->table_name." (url, http_code) VALUES ('".str_replace("'", "&#39;", $matches[2])."', -1) ;") ; 	
 			}
    		} 
@@ -601,11 +602,11 @@ class links_synthesis extends pluginSedLex {
 		}
 		
 		// We update the occurrence of the anchor in the list
-		if ($key_url!=md5($matches[2])) {
-			if (isset($this->table_links[md5($matches[2])]["occ"][trim($matches[4])])) {
-				$this->table_links[md5($matches[2])]["occ"][trim($matches[4])] ++ ; 
+		if ($key_url!=sha1($matches[2])) {
+			if (isset($this->table_links[sha1($matches[2])]["occ"][trim($matches[4])])) {
+				$this->table_links[sha1($matches[2])]["occ"][trim($matches[4])] ++ ; 
 			} else {
-				$this->table_links[md5($matches[2])]["occ"][trim($matches[4])] = 1 ; 
+				$this->table_links[sha1($matches[2])]["occ"][trim($matches[4])] = 1 ; 
 			}
 		}
 		
@@ -623,15 +624,17 @@ class links_synthesis extends pluginSedLex {
 	
 			if ($this->get_param('enable_grabzit')) {
 				if (is_file(WP_CONTENT_DIR."/sedlex/links-synthesis/".$blog_fold."/img_".sha1($matches[2]).".jpg")) {
-					$lien_final = '<a'.$matches[1].'href="'.$matches[2].'"'.$matches[3].' onmouseover="jQuery(\'.img_'.sha1($matches[2]).'\').fadeIn(\'slow\');" onmouseout="jQuery(\'.img_'.sha1($matches[2]).'\').fadeOut(\'slow\');">'.$matches[4].'</a>' ; 
-					$lien_final .= '<img class="thumbnail_url_LS img_'.sha1($matches[2]).'" src="'.WP_CONTENT_URL."/sedlex/links-synthesis/".$blog_fold."/img_".sha1($matches[2]).".jpg".'" />' ; 
+					$lien_final = '<a'.$matches[1].'href="'.$matches[2].'"'.$matches[3].' onmouseover="jQuery(\'.img_'.sha1($matches[2])."_".$this->img_count.'\').fadeIn(\'slow\');" onmouseout="jQuery(\'.img_'.sha1($matches[2])."_".$this->img_count.'\').fadeOut(\'slow\');">'.$matches[4].'</a>' ; 
+					$lien_final .= '<img class="thumbnail_url_LS img_'.sha1($matches[2])."_".$this->img_count.'" src="'.WP_CONTENT_URL."/sedlex/links-synthesis/".$blog_fold."/img_".sha1($matches[2]).".jpg".'" />' ; 
+					$this->img_count ++ ; 
 				}
 			}
 			
 			if ($this->get_param('enable_wkhtmltoimage')) {
 				if (is_file(WP_CONTENT_DIR."/sedlex/links-synthesis/".$blog_fold."wk_th_".sha1($matches[2].$this->get_param('enable_wkhtmltoimage_winw').$this->get_param('enable_wkhtmltoimage_w').$this->get_param('enable_wkhtmltoimage_h')).".jpg")) {
-					$lien_final = '<a'.$matches[1].'href="'.$matches[2].'"'.$matches[3].' onmouseover="jQuery(\'.img_'.sha1($matches[2]).'\').fadeIn(\'slow\');" onmouseout="jQuery(\'.img_'.sha1($matches[2]).'\').fadeOut(\'slow\');">'.$matches[4].'</a>' ; 
-					$lien_final .= '<img class="thumbnail_url_LS img_'.sha1($matches[2]).'" src="'.WP_CONTENT_URL."/sedlex/links-synthesis/".$blog_fold."wk_th_".sha1($matches[2].$this->get_param('enable_wkhtmltoimage_winw').$this->get_param('enable_wkhtmltoimage_w').$this->get_param('enable_wkhtmltoimage_h')).".jpg".'" />' ; 
+					$lien_final = '<a'.$matches[1].'href="'.$matches[2].'"'.$matches[3].' onmouseover="jQuery(\'.img_'.sha1($matches[2])."_".$this->img_count.'\').fadeIn(\'slow\');" onmouseout="jQuery(\'.img_'.sha1($matches[2])."_".$this->img_count.'\').fadeOut(\'slow\');">'.$matches[4].'</a>' ; 
+					$lien_final .= '<img class="thumbnail_url_LS img_'.sha1($matches[2])."_".$this->img_count.'" src="'.WP_CONTENT_URL."/sedlex/links-synthesis/".$blog_fold."wk_th_".sha1($matches[2].$this->get_param('enable_wkhtmltoimage_winw').$this->get_param('enable_wkhtmltoimage_w').$this->get_param('enable_wkhtmltoimage_h')).".jpg".'" />' ; 
+					$this->img_count ++ ; 
 				}
 			}
 		}
@@ -735,6 +738,12 @@ p.links_synthesis_entry {
 	vertical-align: super;
 }
 
+.thumbnail_url_LS {
+    z-index:999 ; 
+    padding:0px;
+    border:1px solid #666666 ; 
+}
+
 @media print {
    .links_synthesis_print_only {
       display:block;
@@ -786,7 +795,7 @@ p.links_synthesis_entry {
 			$blog_fold = $blog_id."/" ; 
 		}
 
-		SL_Debug::log(get_class(), "Print the configuration page." , 4) ; 
+		SLFramework_Debug::log(get_class(), "Print the configuration page." , 4) ; 
 				
 		?>
 		<div class="plugin-titleSL">
@@ -800,16 +809,12 @@ p.links_synthesis_entry {
 			//===============================================================================================
 			// After this comment, you may modify whatever you want
 			?>
-			<p><?php echo __("In this plugin, an index of all links in the page/post is created at the end of the page/post.", $this->pluginID) ;?></p>
-			<p><?php echo __("In addition, each link is periodically checked to see if the link is still valid.", $this->pluginID) ;?></p>
-			<p><?php echo __("You may also create a thumbnail of the URL to be displayed when the mouse if over the link.", $this->pluginID) ;?></p>
-			<p><?php echo __("Finally, you may customize the display of each link thanks to metatag and headers.", $this->pluginID) ;?></p>
 			<?php
 			
 			// We check rights
 			$this->check_folder_rights( array(array(WP_CONTENT_DIR."/sedlex/test/", "rwx")) ) ;
 			
-			$tabs = new adminTabs() ; 
+			$tabs = new SLFramework_Tabs() ; 
 			
 			ob_start() ; 
 				echo "<div id='table_links_synthesis'>"  ; 
@@ -844,19 +849,19 @@ p.links_synthesis_entry {
 						if (isset($_GET['show_regexp'])) {
 							$show_regexp = $_GET['show_regexp'] ; 
 							foreach ($show_regexp as $sr) {
-								if ($sr==md5($r)) {
+								if ($sr==sha1($r)) {
 									$check = "checked" ; 
 									$regexp_to_be_matched[] = $r ;  
 								}
 							}
 						}
-						echo "<p><input type='checkbox' name='show_regexp[]' value='".md5($r)."' $check> ".sprintf(__("Links which match regex %s", $this->pluginID), "<code>".$r."</code>")."</p>" ; 
+						echo "<p><input type='checkbox' name='show_regexp[]' value='".sha1($r)."' $check> ".sprintf(__("Links which match regex %s", $this->pluginID), "<code>".$r."</code>")."</p>" ; 
 					}
 					echo "<p><input type='submit' class='button-primary validButton' value='".__("Filter results based on regexp",$this->pluginID)."'/></p>" ; 
 					echo "</form>";	
 				}	
 				
-				$table = new adminTable(0, $maxnb, true, true) ;
+				$table = new SLFramework_Table(0, $maxnb, true, true) ;
 				$table->title(array(__('URL', $this->pluginID), __('Posts/Articles', $this->pluginID), __('Status', $this->pluginID), __('Keywords', $this->pluginID))) ; 
 				
 				// Tous les resultats
@@ -937,9 +942,9 @@ p.links_synthesis_entry {
 				
 				// We order the posts page according to the choice of the user
 				if ($table->current_orderdir()=="ASC") {
-					$ordered_results = Utils::multicolumn_sort($filtered_results, $table->current_ordercolumn()-1, true) ;  
+					$ordered_results = SLFramework_Utils::multicolumn_sort($filtered_results, $table->current_ordercolumn()-1, true) ;  
 				} else { 
-					$ordered_results = Utils::multicolumn_sort($filtered_results, $table->current_ordercolumn()-1, false) ;  
+					$ordered_results = SLFramework_Utils::multicolumn_sort($filtered_results, $table->current_ordercolumn()-1, false) ;  
 				}
 
 				// on limite l'affichage en fonction des param
@@ -1020,7 +1025,7 @@ p.links_synthesis_entry {
 			ob_start() ; 
 				$maxnb = 20 ; 
 				
-				$table = new adminTable(0, $maxnb, true, true) ;
+				$table = new SLFramework_Table(0, $maxnb, true, true) ;
 				$table->title(array(__('URL', $this->pluginID), __('Posts/Articles', $this->pluginID), __('Keywords', $this->pluginID))) ; 
 				
 				// Tous les resultats qui ont ŽtŽ ignorŽs
@@ -1089,9 +1094,9 @@ p.links_synthesis_entry {
 				
 				// We order the posts page according to the choice of the user
 				if ($table->current_orderdir()=="ASC") {
-					$ordered_results = Utils::multicolumn_sort($filtered_results, $table->current_ordercolumn()-1, true) ;  
+					$ordered_results = SLFramework_Utils::multicolumn_sort($filtered_results, $table->current_ordercolumn()-1, true) ;  
 				} else { 
-					$ordered_results = Utils::multicolumn_sort($filtered_results, $table->current_ordercolumn()-1, false) ;  
+					$ordered_results = SLFramework_Utils::multicolumn_sort($filtered_results, $table->current_ordercolumn()-1, false) ;  
 				}
 
 				// on limite l'affichage en fonction des param
@@ -1129,13 +1134,43 @@ p.links_synthesis_entry {
 					$table->add_line(array($cel_url, $cel_occurrence, $cel_meta_header), $r[4]) ; 
 				}
 				echo $table->flush() ; 
-				
 
 			$tabs->add_tab(__('Ignored Links',  $this->pluginID), ob_get_clean()) ; 	
 
 
+			// HOW To
+			ob_start() ;
+				echo "<p>".__('This plugin allows the supervision of all external links.', $this->pluginID)."</p>" ; 
+				echo "<p>".__('It checks that no dead links exists and no redirection have been set up externally.', $this->pluginID)."</p>" ; 
+			$howto1 = new SLFramework_Box (__("Purpose of that plugin", $this->pluginID), ob_get_clean()) ; 
+			ob_start() ;
+				echo "<p>".__('An index of all links in the page/post may be created at the end of the page/post if you want.', $this->pluginID)."</p>" ; 
+			$howto2 = new SLFramework_Box (__("Summary of external links", $this->pluginID), ob_get_clean()) ; 
+			ob_start() ;
+				echo "<p>".__('You may also create a thumbnail of the URL to be displayed when the mouse if over the link.', $this->pluginID)."</p>" ; 
+				echo "<p>".__('To create thumbnail, you may use:', $this->pluginID)."</p>" ; 
+				echo "<ul style='list-style-type: disc;padding-left:40px;'>" ; 
+					echo "<li><p>".sprintf(__("%s service:", $this->pluginID), "Grabz.It")."</p></li>" ; 
+						echo "<ul style='list-style-type: circle;padding-left:40px;'>" ; 
+							echo "<li><p>".sprintf(__("You have to create an account on the %s website;", $this->pluginID), '<a href="http://grabz.it/">Grabz.it</a>')."</p></li>" ; 
+							echo "<li><p>".__("Please be aware that the number of thumbnails created may be restricted. The size of the thumbnail cannot be adapted", $this->pluginID)."</p></li>" ; 
+						echo "</ul>" ;
+					echo "<li><p>".sprintf(__("%s local service:", $this->pluginID), "wkhtmltoimage")."</p></li>" ; 
+						echo "<ul style='list-style-type: circle;padding-left:40px;'>" ; 
+							echo "<li><p>".sprintf(__("You have to download the %s binary at %s;", $this->pluginID),"wkhtmltoimage", "<a href='http://wkhtmltopdf.org/downloads.html'>http://wkhtmltopdf.org/</a>")."</p></li>" ; 
+							echo "<li><p>".__("This option is only available on Linux server (Windows server are not supported yet).", $this->pluginID)."</p></li>" ; 
+						echo "</ul>" ;				
+				echo "</ul>" ; 
+			$howto3 = new SLFramework_Box (__("Thumbnails", $this->pluginID), ob_get_clean()) ; 
+			ob_start() ;
+				 echo $howto1->flush() ; 
+				 echo $howto2->flush() ; 
+				 echo $howto3->flush() ; 
+			$tabs->add_tab(__('How To',  $this->pluginID), ob_get_clean() , plugin_dir_url("/").'/'.str_replace(basename(__FILE__),"",plugin_basename(__FILE__))."core/img/tab_how.png") ; 	
+	
+
 			ob_start() ; 
-				$params = new parametersSedLex($this, "tab-parameters") ; 
+				$params = new SLFramework_Parameters($this, "tab-parameters") ; 
 				$params->add_title(__('Create an index of all links',  $this->pluginID)) ; 
 				$params->add_param('display', __('Display the index at the bottom of the page/post:',  $this->pluginID)) ; 
 				$params->add_comment(__('Deactivating this option may be useful for a fresh install of the plugin. Thus, information on links may be retrieved and the display will be cleaner.',  $this->pluginID)) ; 
@@ -1232,14 +1267,14 @@ p.links_synthesis_entry {
 			if (((is_multisite())&&($blog_id == 1))||(!is_multisite())||($frmk->get_param('global_allow_translation_by_blogs'))) {
 				ob_start() ; 
 					$plugin = str_replace("/","",str_replace(basename(__FILE__),"",plugin_basename( __FILE__))) ; 
-					$trans = new translationSL($this->pluginID, $plugin) ; 
+					$trans = new SLFramework_Translation($this->pluginID, $plugin) ; 
 					$trans->enable_translation() ; 
 				$tabs->add_tab(__('Manage translations',  $this->pluginID), ob_get_clean() , WP_PLUGIN_URL.'/'.str_replace(basename(__FILE__),"",plugin_basename(__FILE__))."core/img/tab_trad.png") ; 	
 			}
 
 			ob_start() ; 
 				$plugin = str_replace("/","",str_replace(basename(__FILE__),"",plugin_basename( __FILE__))) ; 
-				$trans = new feedbackSL($plugin, $this->pluginID) ; 
+				$trans = new SLFramework_Feedback($plugin, $this->pluginID) ; 
 				$trans->enable_feedback() ; 
 			$tabs->add_tab(__('Give feedback',  $this->pluginID), ob_get_clean() , WP_PLUGIN_URL.'/'.str_replace(basename(__FILE__),"",plugin_basename(__FILE__))."core/img/tab_mail.png") ; 	
 			
@@ -1247,7 +1282,7 @@ p.links_synthesis_entry {
 				// A list of plugin slug to be excluded
 				$exlude = array('wp-pirate-search') ; 
 				// Replace sedLex by your own author name
-				$trans = new otherPlugins("sedLex", $exlude) ; 
+				$trans = new SLFramework_OtherPlugins("sedLex", $exlude) ; 
 				$trans->list_plugins() ; 
 			$tabs->add_tab(__('Other plugins',  $this->pluginID), ob_get_clean() , WP_PLUGIN_URL.'/'.str_replace(basename(__FILE__),"",plugin_basename(__FILE__))."core/img/tab_plug.png") ; 	
 			
@@ -1289,8 +1324,13 @@ p.links_synthesis_entry {
 		$path_th = WP_CONTENT_DIR."/sedlex/links-synthesis/".$blog_fold."wk_th_".sha1($url.$winw.$cropw.$croph).".jpg" ; 
 		$url_th = WP_CONTENT_URL."/sedlex/links-synthesis/".$blog_fold."wk_th_".sha1($url.$winw.$cropw.$croph).".jpg" ;
 		
+		$path_log = WP_CONTENT_DIR."/sedlex/links-synthesis/".$blog_fold."wk_".sha1($url.$winw.$cropw.$croph).".log" ; 
+		
 		if (is_file($path_img)) {
 			@unlink($path_img) ; 
+		}
+		if (is_file($path_log)) {
+			@unlink($path_log) ; 
 		}
 
 		if (is_file($command_wk)){
@@ -1330,19 +1370,21 @@ p.links_synthesis_entry {
 				// copying the part into thumbnail
 				
 				$thumb = imagecreatetruecolor($cropw, $croph);
-				//imagecopyresampled($thumb, $myImage, 0, 0, $x, $y, $cropw, $croph, $smallestSide, $smallestSide);
 				imagecopyresampled($thumb, $myImage, 0, 0, $x, 0, $cropw, $croph, $origin_w, $origin_h);
 
 				if (imagejpeg ($thumb, $path_th, 92)) {
 					return array("success"=>true, "url"=>$url_img, "thumb"=>$url_th) ; 
 				} else {
+					@file_put_contents($path_log, sprintf(__("%s has failed.", $this->pluginID), "imagejpeg")) ; 
 					return array("success"=>false, "msg"=>sprintf(__("%s has failed.", $this->pluginID), "imagejpeg")) ; 
 				}
 				
 			} else { 
+				@file_put_contents($path_log, sprintf(__("%s has failed: %s.", $this->pluginID), "<code>".$command_wk."</code>", "<code>".implode(" - ",$output)."</code>")) ; 
 				return array("success"=>false, "msg"=>sprintf(__("%s has failed: %s.", $this->pluginID), "<code>".$command_wk."</code>", "<code>".implode(" - ",$output)."</code>")) ; 
 			}
 		} else {
+			@file_put_contents($path_log, sprintf(__("%s does not exist.", $this->pluginID), "<code>".$command_wk."</code>")) ; 
 			return array("success"=>false, "msg"=>sprintf(__("%s does not exist.", $this->pluginID), "<code>".$command_wk."</code>")) ; 
 		}
 	}
@@ -1373,7 +1415,7 @@ p.links_synthesis_entry {
 		$synthesis .= "<p>".__("You have just to wait until the background process analysis each links or you may also force the analysis (see below).", $this->pluginID)."</p>" ; 
 		echo $synthesis ; 
 	
-		$table = new adminTable(0, $maxnb, true, true) ;
+		$table = new SLFramework_Table(0, $maxnb, true, true) ;
 		$table->title(array(__('URL', $this->pluginID), __('Posts/Articles', $this->pluginID), __('Status', $this->pluginID))) ; 
 	
 		// Tous les resultats
@@ -1422,9 +1464,9 @@ p.links_synthesis_entry {
 	
 		// We order the posts page according to the choice of the user
 		if ($table->current_orderdir()=="ASC") {
-			$ordered_results = Utils::multicolumn_sort($filtered_results, $table->current_ordercolumn()-1, true) ;  
+			$ordered_results = SLFramework_Utils::multicolumn_sort($filtered_results, $table->current_ordercolumn()-1, true) ;  
 		} else { 
-			$ordered_results = Utils::multicolumn_sort($filtered_results, $table->current_ordercolumn()-1, false) ;  
+			$ordered_results = SLFramework_Utils::multicolumn_sort($filtered_results, $table->current_ordercolumn()-1, false) ;  
 		}
 
 		// on limite l'affichage en fonction des param
@@ -1450,7 +1492,11 @@ p.links_synthesis_entry {
 					$add_img .= '<p style="text-align:center">'.sprintf(__("Thumbnail generated by %s", $this->pluginID), "<code>wkHtmlToImage</code>").'</p>' ; 
 					$add_img .= '<p style="text-align:center"><img src="'.WP_CONTENT_URL."/sedlex/links-synthesis/".$blog_fold."wk_th_".sha1($r[0].$this->get_param('enable_wkhtmltoimage_winw').$this->get_param('enable_wkhtmltoimage_w').$this->get_param('enable_wkhtmltoimage_h')).".jpg".'" /></p>' ; 
 				} else {
-					$add_img .= '<p style="text-align:center; color:#999999;">'.sprintf(__("Thumbnail not yet generated by %s", $this->pluginID), "<code>wkHtmlToImage</code>").'</p>' ; 
+					if (is_file(WP_CONTENT_DIR."/sedlex/links-synthesis/".$blog_fold."wk_".sha1($r[0].$this->get_param('enable_wkhtmltoimage_winw').$this->get_param('enable_wkhtmltoimage_w').$this->get_param('enable_wkhtmltoimage_h')).".log")) {
+						$add_img .= '<p style="text-align:center; color:#999999;">'.sprintf(__("%s have generated an error while trying to generate the thumbnail: %s", $this->pluginID), "<code>wkHtmlToImage</code>", file_get_content(WP_CONTENT_DIR."/sedlex/links-synthesis/".$blog_fold."wk_".sha1($r[0].$this->get_param('enable_wkhtmltoimage_winw').$this->get_param('enable_wkhtmltoimage_w').$this->get_param('enable_wkhtmltoimage_h')).".log")).'</p>' ; 
+					} else {
+						$add_img .= '<p style="text-align:center; color:#999999;">'.sprintf(__("Thumbnail not yet generated by %s", $this->pluginID), "<code>wkHtmlToImage</code>").'</p>' ; 
+					}
 				}
 			}
 			
@@ -1580,20 +1626,20 @@ p.links_synthesis_entry {
 				$this->set_param('nb_post_to_check', 0) ; 
 				$this->set_param('nb_link_to_check', 0) ; 
 			} else {
-				$pb = new progressBarAdmin(500, 20, 100, "PROGRESS POSTS - ".$this->get_param('nb_post_to_check')." / ".$this->get_param('nb_post_to_check')) ; 
+				$pb = new SLFramework_Progressbar(500, 20, 100, "PROGRESS POSTS - ".$this->get_param('nb_post_to_check')." / ".$this->get_param('nb_post_to_check')) ; 
 				echo "<br>" ; 
 				$pb->flush() ;	
 				$pc = floor(100*($this->get_param('nb_link_to_check')-count($this->get_param('list_link_id_to_check')))/$this->get_param('nb_link_to_check')) ; 
-				$pb = new progressBarAdmin(500, 20, $pc, "PROGRESS LINKS - ".($this->get_param('nb_link_to_check')-count($this->get_param('list_link_id_to_check')))." / ".$this->get_param('nb_link_to_check')) ;
+				$pb = new SLFramework_Progressbar(500, 20, $pc, "PROGRESS LINKS - ".($this->get_param('nb_link_to_check')-count($this->get_param('list_link_id_to_check')))." / ".$this->get_param('nb_link_to_check')) ;
 				echo "<br>" ; 
 				$pb->flush() ;				
 			}
 		} else {
 			$pc = floor(100*($this->get_param('nb_post_to_check')-count($this->get_param('list_post_id_to_check')))/$this->get_param('nb_post_to_check')) ; 
-			$pb = new progressBarAdmin(500, 20, $pc, "PROGRESS POSTS - ".($this->get_param('nb_post_to_check')-count($this->get_param('list_post_id_to_check')))." / ".$this->get_param('nb_post_to_check')) ; 
+			$pb = new SLFramework_Progressbar(500, 20, $pc, "PROGRESS POSTS - ".($this->get_param('nb_post_to_check')-count($this->get_param('list_post_id_to_check')))." / ".$this->get_param('nb_post_to_check')) ; 
 			echo "<br>" ; 
 			$pb->flush() ;	
-			$pb = new progressBarAdmin(500, 20, 0, "PROGRESS LINKS - ".__('Wait...', $this->pluginID)) ; 
+			$pb = new SLFramework_Progressbar(500, 20, 0, "PROGRESS LINKS - ".__('Wait...', $this->pluginID)) ; 
 			echo "<br>" ; 
 			$pb->flush() ;	
 		}
@@ -1632,8 +1678,8 @@ p.links_synthesis_entry {
 		$max_num = $this->get_param('nb_check') ; 
 				
 		if ($id_tocheck==-1) {
-			// sectionner un au hasard mais qui n'est pas indiquŽ comme ˆ ignorer
-			$results = $wpdb->get_results("SELECT * FROM ".$this->table_name." WHERE ISNULL(last_check) AND http_code<>'-2' ORDER BY RAND() LIMIT ".$max_num) ; 
+			// sectionner un au hasard 
+			$results = $wpdb->get_results("SELECT * FROM ".$this->table_name." WHERE ISNULL(last_check) ORDER BY RAND() LIMIT ".$max_num) ; 
 		} else {
 			$results = $wpdb->get_results("SELECT * FROM ".$this->table_name." WHERE id='".$id_tocheck."'") ; 
 		}
@@ -1685,9 +1731,17 @@ p.links_synthesis_entry {
 					$header = esc_sql($error_message) ; 
 					echo $header ; 
 					if (is_null($r->failure_first)) {
-						$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='0', failure_first=NOW(), header='".$header."'  WHERE id='".$r->id."'" ; 
+						if (($r->http_code==-2)||($r->http_code=="-2")) {
+							$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='-2', failure_first=NOW(), header='".$header."'  WHERE id='".$r->id."'" ; 
+					 	} else {
+							$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='0', failure_first=NOW(), header='".$header."'  WHERE id='".$r->id."'" ; 
+						}
 					} else {
-						$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='0', header='".$header."' WHERE id='".$r->id."'" ; 
+						if (($r->http_code==-2)||($r->http_code=="-2")) {
+							$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='-2', header='".$header."' WHERE id='".$r->id."'" ; 
+						} else {
+							$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='0', header='".$header."' WHERE id='".$r->id."'" ; 
+						}
 					}
 					$wpdb->query($update) ; 
 				}  else {
@@ -1698,9 +1752,17 @@ p.links_synthesis_entry {
 
 					if ($res['http_code']!=200) {
 						if (is_null($r->failure_first)) {
-							$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='".$res['http_code']."', failure_first=NOW() WHERE id='".$r->id."'" ; 
+							if (($r->http_code==-2)||($r->http_code=="-2")) {
+								$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='-2', failure_first=NOW() WHERE id='".$r->id."'" ; 
+							} else {
+								$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='".$res['http_code']."', failure_first=NOW() WHERE id='".$r->id."'" ; 
+							}
 						} else {
-							$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='".$res['http_code']."' WHERE id='".$r->id."'" ; 
+							if (($r->http_code==-2)||($r->http_code=="-2")) {
+								$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='-2' WHERE id='".$r->id."'" ; 
+							} else {
+								$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='".$res['http_code']."' WHERE id='".$r->id."'" ; 
+							}
 						}
 					} else {
 						if ($real_code!=-1) {
@@ -1711,12 +1773,16 @@ p.links_synthesis_entry {
 							$anchor = explode("#",$r->url) ; 
 							if (isset($anchor[1])) {
 								$content_body  = $content['body'] ; 
-								if ((!preg_match("/<a ([^>]*)name='".$anchor[1]."'([^>]*)>/u",$content_body))&&(!preg_match('/<a ([^>]*)name="'.$anchor[1].'"([^>]*)>/u',$content_body))) {
+								if ((!preg_match("/<a(\s)([^>]*)name='".$anchor[1]."'([^>]*)>/u",$content_body))&&(!preg_match('/<a(\s)([^>]*)name="'.$anchor[1].'"([^>]*)>/u',$content_body))) {
 									$res['http_code'] = 210 ; // no anchor found
 								}
 							}
 						}
-						$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='".$res['http_code']."', failure_first=NULL, redirect_url='".$res['redirect_url']."', title='".str_replace("'", "&#39;", $res['title'])."', metatag='".str_replace("'", "##&#39;##", $res['metatag'])."', header='".str_replace("'", "##&#39;##", $res['header'])."' WHERE id='".$r->id."'" ; 
+						if (($r->http_code==-2)||($r->http_code=="-2")) {
+							$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='-2', failure_first=NULL, redirect_url='".$res['redirect_url']."', title='".str_replace("'", "&#39;", $res['title'])."', metatag='".str_replace("'", "##&#39;##", $res['metatag'])."', header='".str_replace("'", "##&#39;##", $res['header'])."' WHERE id='".$r->id."'" ; 
+						} else {
+							$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='".$res['http_code']."', failure_first=NULL, redirect_url='".$res['redirect_url']."', title='".str_replace("'", "&#39;", $res['title'])."', metatag='".str_replace("'", "##&#39;##", $res['metatag'])."', header='".str_replace("'", "##&#39;##", $res['header'])."' WHERE id='".$r->id."'" ; 
+						}
 					}
 					$wpdb->query($update) ; 
 				}
