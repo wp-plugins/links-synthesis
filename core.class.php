@@ -791,7 +791,7 @@ if (!class_exists('pluginSedLex')) {
 		
 		public  function flush_js($hook) {
 			global $sedlex_list_scripts ; 
-			
+						
 			// If it not a plugin page SL page
 			if (is_admin()) {
 				$plugin = explode("_", $hook) ; 
