@@ -58,6 +58,9 @@ Have fun !
 
 == Changelog ==
 
+= 1.2.3 = 
+* NEW: Add log error for all tabs (screenshot)
+
 = 1.2.2 = 
 * NEW: Only one image is displayed when similar links are present
 * NEW: even ignored links are ckecked 
@@ -95,4 +98,4 @@ Have fun !
 == Frequently Asked Questions ==
 
  
-InfoVersion:4c1dad58fa1ee30fbb2e89968cba11f297b3ed36
+InfoVersion:d7401d82cdb8cc60e3d2a46a58c77b6003a2df41
