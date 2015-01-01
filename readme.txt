@@ -59,6 +59,9 @@ Have fun !
 
 == Changelog ==
 
+= 1.3.1 = 
+* New: if a post has not been analyzed, it is automatically anaylzed during its first display
+
 = 1.3.0 = 
 * NEW: The process for identifying the links are redesigned (lighter process) : now it is performed during the saving of a post
 * BUG: The ignored page are now rescaned periodically
@@ -103,4 +106,4 @@ Have fun !
 == Frequently Asked Questions ==
 
  
-InfoVersion:1bf5401c1e4855572949c5b0313f084374a19ed0
+InfoVersion:f356fbb4af2915595eb1ceed94609bda5d39d5ea

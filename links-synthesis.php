@@ -3,7 +3,8 @@
 Plugin Name: Links synthesis
 Plugin Tag: tag
 Description: <p>This plugin enables a synthesis of all links and the creation of thumbnail for links in an article and retrieves data from them. </p><p>In this plugin, an index of all links in the page/post is created at the end of the page/post. </p><p>In addition, each link is periodically check to see if the link is still valid. </p>p>In addition, each link is periodically check to see if the link is still valid. </p><p>You may display a thumbnail of the URL when the user move its mouse over the link.</p><p>This plugin is under GPL licence. </p>
-Version: 1.3.0
+Version: 1.3.1
+
 
 Framework: SL_Framework
 Author: sedLex
@@ -250,10 +251,11 @@ class links_synthesis extends pluginSedLex {
 	
 	function _modify_content($content, $type, $excerpt) {	
 		global $post ; 
-		global $wpdb ; 
 		
 		$postpost = get_post() ; 
 		$this->content_for_callback = $postpost->post_content ; // on ne met pas content car il y a beaucoup de lien ajoutŽ par d'autres plugins
+		
+		$this->whenPostIsSaved($postpost->ID, true, true) ; 
 		
 		// We check whether there is an exclusion
 		$exclu = $this->get_param('exclu') ;
@@ -369,15 +371,18 @@ class links_synthesis extends pluginSedLex {
 	* Ajax Callback to save post
 	* @return void
 	*/
-	function whenPostIsSaved($pid, $forced=false) {
+	function whenPostIsSaved($pid, $forced=false, $checkExist=false) {
 		global $wpdb ; 
+		
+		if ($checkExist) {
+			$nb = $wpdb->get_var("SELECT * FROM ".$this->table_name." WHERE occurrence like '%selectPostWithID".$pid."%' LIMIT 1; ") ; 
+			if ($nb!=0) {
+				return ; 
+			}
+		}
 		
 		if ( wp_is_post_revision( $pid ) )
 			return;
-
-		if ($this->get_param('update_message')!="") {
-			return ; 
-		}
 
 		$postpost = get_post($pid) ; 
 		$content = $postpost->post_content ; 
