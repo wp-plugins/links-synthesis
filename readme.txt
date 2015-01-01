@@ -6,8 +6,9 @@ Author URI: http://www.sedlex.fr/
 Plugin URI: http://wordpress.org/plugins/links-synthesis/
 Tags: tag
 Requires at least: 3.0
-Tested up to: 3.9.1
+Tested up to: 4.2
 Stable tag: trunk
+License: GPLv3
 
 This plugin enables a synthesis of all links and the creation of thumbnail for links in an article and retrieves data from them. 
 
@@ -58,6 +59,10 @@ Have fun !
 
 == Changelog ==
 
+= 1.3.0 = 
+* NEW: The process for identifying the links are redesigned (lighter process) : now it is performed during the saving of a post
+* BUG: The ignored page are now rescaned periodically
+
 = 1.2.3 = 
 * NEW: Add log error for all tabs (screenshot)
 
@@ -98,4 +103,4 @@ Have fun !
 == Frequently Asked Questions ==
 
  
-InfoVersion:145afb25ec3939185f02a63b3925d8718c3a7771
+InfoVersion:1bf5401c1e4855572949c5b0313f084374a19ed0

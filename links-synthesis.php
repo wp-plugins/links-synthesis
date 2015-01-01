@@ -3,7 +3,8 @@
 Plugin Name: Links synthesis
 Plugin Tag: tag
 Description: <p>This plugin enables a synthesis of all links and the creation of thumbnail for links in an article and retrieves data from them. </p><p>In this plugin, an index of all links in the page/post is created at the end of the page/post. </p><p>In addition, each link is periodically check to see if the link is still valid. </p>p>In addition, each link is periodically check to see if the link is still valid. </p><p>You may display a thumbnail of the URL when the user move its mouse over the link.</p><p>This plugin is under GPL licence. </p>
-Version: 1.2.3
+Version: 1.3.0
+
 Framework: SL_Framework
 Author: sedLex
 Author URI: http://www.sedlex.fr/
@@ -59,6 +60,11 @@ class links_synthesis extends pluginSedLex {
 		
 		add_action( "wp_ajax_stopAnalysisLinks",  array($this,"stopAnalysisLinks")) ; 
 		add_action( "wp_ajax_forceAnalysisLinks",  array($this,"forceAnalysisLinks")) ; 
+		
+	 	add_action( 'save_post', array( $this, 'whenPostIsSaved') );
+		add_action( 'delete_post', array( $this, 'whenPostIsSaved') );
+		add_action('all_admin_notices', array($this, 'update_message'));
+
 
 		// Important variables initialisation (Do not modify)
 		$this->path = __FILE__ ; 
@@ -242,16 +248,11 @@ class links_synthesis extends pluginSedLex {
 	* @return string the new content
 	*/
 	
-	function _modify_content($content, $type, $excerpt, $pid=-1) {	
+	function _modify_content($content, $type, $excerpt) {	
 		global $post ; 
 		global $wpdb ; 
 		
-		
-		if ($pid==-1) {
-			$pid = $post->ID ; 
-		} 
-		
-		$postpost = get_post($pid) ; 
+		$postpost = get_post() ; 
 		$this->content_for_callback = $postpost->post_content ; // on ne met pas content car il y a beaucoup de lien ajouté par d'autres plugins
 		
 		// We check whether there is an exclusion
@@ -272,7 +273,7 @@ class links_synthesis extends pluginSedLex {
 			return $content ; 
 		
 		// ANALYSIS
-		$pattern = '/<a([^>]*?)href=["\']([^"\']*?)["\']([^>]*?)>(.*?)<\/a>/is';
+		$pattern = '/<a([^>]*?)href=["\']([^"\']*?)["\']([^>]*?)>(.*?)<\/a>/isu';
 		$content = preg_replace_callback($pattern, array($this,"_modify_content_callback"), $content);
 		
 		ob_start() ; 
@@ -347,65 +348,7 @@ class links_synthesis extends pluginSedLex {
 					$truc = trim($truc) ; 
 					echo $truc ;
 				}
-	
-				// We update the number of occurrence
-				$result = $wpdb->get_results("SELECT * FROM ".$this->table_name." WHERE url='".str_replace("'", "&#39;", $tl['url'])."' LIMIT 1 ; ") ; 
-
-				if ( $result ) {
-
-					$current_occurrence = unserialize(str_replace("##&#39;##", "'", $result[0]->occurrence)) ; 
-					
-					if (!is_array($current_occurrence)) {
-						$current_occurrence = array() ; 
-					}
-					
-					$renumerot_necessaire = false ; 
-					
-					// On parcours les occurrences deja enregistre pour mettre a jour celle ci
-					$count_init = count($current_occurrence) ; 
-					for ($i=0 ; $i<$count_init ; $i++) {
-						if ($current_occurrence[$i]["id"] == "selectPostWithID".$pid) {
-							if (isset($tl["occ"][$current_occurrence[$i]["text"]])) {
-								if ($current_occurrence[$i]["nb"]!=$tl["occ"][$current_occurrence[$i]["text"]]) {
-									$current_occurrence[$i]["nb"] = $tl["occ"][$current_occurrence[$i]["text"]] ; 
-								}
-							// Si on a pas trouve l'occurrence dans $tl["occ"], cela veut dire qu'il a ÈtÈ supprimÈ, on le supprime aussi de $current_occurrence
-							} else {
-								unset($current_occurrence[$i]);
-								$renumerot_necessaire = true ; 
-							}
-						}
-					}
-					// On renumerote les index si necessaire
-					if ($renumerot_necessaire) {
-						$current_occurrence = array_values($current_occurrence) ; 
-					}
-					// On parcours $tl["occ"] pour mettre a jour les occurrences deja enregistre 
-					foreach ($tl["occ"] as $k => $v) {
-						$found_occ = false ; 
-						for ($i=0 ; $i<count($current_occurrence) ; $i++) {
-							if ($k == $current_occurrence[$i]["text"]) {
-								$found_occ = true ; 
-							}
-						}
-						if (!$found_occ) {
-							$current_occurrence[] = array("id"=>"selectPostWithID".$pid, "text"=>$k, "nb"=>$v) ; 
-						}
-					}
-					// On verifie que l'on a besoin de mettre a jour ou non la base SQL
-					$new_serialized_occurrence = str_replace("'", "##&#39;##", serialize($current_occurrence)) ; 
-					
-					if ($new_serialized_occurrence != $result[0]->occurrence) {
-						if (count($current_occurrence)>0) {
-							$update = "UPDATE ".$this->table_name." SET occurrence='".$new_serialized_occurrence."' WHERE id='".$result[0]->id."'" ; 
-							$wpdb->query($update) ; 
-						} else {
-							$delete = "DELETE FROM ".$this->table_name." WHERE id='".$result[0]->id."'" ; 
-							$wpdb->query($delete) ; 							
-						}
-					}
-				} 
-			}
+			} 
 			
 		$reftable = ob_get_clean() ;
 		 
@@ -419,7 +362,130 @@ class links_synthesis extends pluginSedLex {
 			$vide = $reftable ; 
 		}
 		
-		// we delete these entries that are not in $this->table_links
+		return $content; 
+	}
+	
+	/** ====================================================================================================================================================
+	* Ajax Callback to save post
+	* @return void
+	*/
+	function whenPostIsSaved($pid, $forced=false) {
+		global $wpdb ; 
+		
+		if ( wp_is_post_revision( $pid ) )
+			return;
+
+		if ($this->get_param('update_message')!="") {
+			return ; 
+		}
+
+		$postpost = get_post($pid) ; 
+		$content = $postpost->post_content ; 
+		
+		$nblinks_tous = 0 ; 
+		$nblinks_occ_maj = 0 ; 
+		$nblinks_supprim = 0 ; 
+		$nblinks_suppri2 = 0 ; 
+		$nblinks_supp_li = 0 ; 
+		$nblinks_supp_l2 = 0 ; 
+		$nblinks_nouveau = 0 ; 
+		$nblinks_nouv_te = 0 ; 
+		
+		$pattern = '/<a([^>]*?)href=["\']([^"\']*?)["\']([^>]*?)>(.*?)<\/a>/isu';
+		
+		$this->content_for_callback = $content ; 
+
+		// This callback is only used for retrieving the $this->table_links
+		$content = preg_replace_callback($pattern, array($this,"_modify_content_callback"), $content);
+	
+		foreach ($this->table_links as $tl) {
+			// only if it is not a local anchor
+			if (!$tl['anchor']) {
+			
+				// We update the number of occurrence
+				$result = $wpdb->get_results("SELECT * FROM ".$this->table_name." WHERE url='".str_replace("'", "&#39;", $tl['url'])."' LIMIT 1 ; ") ; 
+
+				if ( $result ) {
+
+					$current_occurrence = unserialize(str_replace("##&#39;##", "'", $result[0]->occurrence)) ; 
+					
+					if (!is_array($current_occurrence)) {
+						$current_occurrence = array() ; 
+					}
+					
+					$renumerot_necessaire = false ;
+										
+					// On parcours les occurrences deja enregistre pour mettre a jour celle ci
+					$count_init = count($current_occurrence) ; 
+					for ($i=0 ; $i<$count_init ; $i++) {
+						// On regarde pour le post courant uniquement
+						if ($current_occurrence[$i]["id"] == "selectPostWithID".$pid) {
+							
+							// On regarde si les textes des liens trouvés dans le post existe
+							if (isset($tl["occ"][$current_occurrence[$i]["text"]])) {
+								if ($current_occurrence[$i]["nb"]!=$tl["occ"][$current_occurrence[$i]["text"]]) {
+									// On met à jour le nombre d'occurrence
+									$current_occurrence[$i]["nb"] = $tl["occ"][$current_occurrence[$i]["text"]] ; 
+									$nblinks_occ_maj ++ ; 
+								} else {
+									// rien a faire car le nb est correct
+								}
+							// Si on a pas trouve l'occurrence dans $tl["occ"][$current_occurrence[$i]["text"]], cela veut dire qu'il n'existe plus de lien ayant un tel texte : il faut le supprimer $current_occurrence
+							} else {
+								unset($current_occurrence[$i]);
+								$renumerot_necessaire = true ; 
+								$nblinks_supprim ++ ; 
+							}
+						}
+					}
+					
+					// On renumerote les index si necessaire
+					if ($renumerot_necessaire) {
+						$current_occurrence = array_values($current_occurrence) ; 
+					}
+					
+					// On parcours $tl["occ"] pour ajouter les entrées qui ne s'y trouvent pas
+					foreach ($tl["occ"] as $k => $v) {
+						$found_occ = false ; 
+						for ($i=0 ; $i<count($current_occurrence) ; $i++) {
+							if (($k == $current_occurrence[$i]["text"])&&($current_occurrence[$i]["id"] == "selectPostWithID".$pid)) {
+								$found_occ = true ; 
+							}
+						}
+						// On ajoute un nouveau texte pour ce lien
+						if (!$found_occ) {
+							$current_occurrence[] = array("id"=>"selectPostWithID".$pid, "text"=>$k, "nb"=>$v) ; 
+							$nblinks_nouv_te ++ ; 
+						}
+					}
+					
+					// On verifie que l'on a besoin de mettre a jour ou non la base SQL
+					$new_serialized_occurrence = str_replace("'", "##&#39;##", serialize($current_occurrence)) ; 
+					
+					if ($new_serialized_occurrence != $result[0]->occurrence) {
+						if (count($current_occurrence)>0) {
+							$update = "UPDATE ".$this->table_name." SET occurrence='".$new_serialized_occurrence."' WHERE id='".$result[0]->id."'" ; 
+							$wpdb->query($update) ; 
+						} else {
+							$delete = "DELETE FROM ".$this->table_name." WHERE id='".$result[0]->id."'" ; 
+							$wpdb->query($delete) ; 	
+							$nblinks_supp_li ++ ; 						
+						}
+					}
+				} else {
+					$current_occurrence = array() ; 
+					foreach ($tl["occ"] as $k => $v) {
+						// On ajoute un nouveau texte pour ce lien
+						$current_occurrence[] = array("id"=>"selectPostWithID".$pid, "text"=>$k, "nb"=>$v) ; 
+					}
+					$out = $wpdb->query("INSERT INTO ".$this->table_name." (url, http_code, occurrence) VALUES ('".str_replace("'", "&#39;", $tl['url'])."', -1, '".str_replace("'", "##&#39;##", serialize($current_occurrence))."') ;") ; 	
+					$nblinks_nouveau ++ ; 
+				}
+			}
+		}
+		
+		// we delete the entries that are not in $this->table_links
+		
 		$result = $wpdb->get_results("SELECT * FROM ".$this->table_name." WHERE occurrence like '%selectPostWithID".$pid."%'; ") ; 
 		if (is_array($result)) {
 			foreach ($result as $r) {
@@ -431,6 +497,7 @@ class links_synthesis extends pluginSedLex {
 					}
 				}
 				if (!$present) {
+
 					// We delete this occurrence of this URL in the database and for this page id
 					$current_occurrence = unserialize(str_replace("##&#39;##", "'", $r->occurrence)) ; 
 					if (is_array($current_occurrence)) {
@@ -445,8 +512,10 @@ class links_synthesis extends pluginSedLex {
 						if ($new_serialized_occurrence != $r->occurrence) {
 							if (count($new_occurrence)>0) {
 								$update = "UPDATE ".$this->table_name." SET occurrence='".$new_serialized_occurrence."' WHERE id='".$r->id."'" ; 
+								$nblinks_suppri2 ++ ; 
 							} else {
 								$update = "DELETE FROM ".$this->table_name." WHERE id='".$r->id."'" ; 
+								$nblinks_supp_l2 ++ ; 						
 							}
 							$wpdb->query($update) ; 
 						}
@@ -456,8 +525,50 @@ class links_synthesis extends pluginSedLex {
 		}
 		
 		// We delete entries that have no occurrence (Seulement en cas de probleme ==> Nettoyage)
-		//$wpdb->query("DELETE FROM ".$this->table_name." WHERE occurrence not like '%selectPostWithID%'") ; 
-		return $content; 
+		$wpdb->query("DELETE FROM ".$this->table_name." WHERE occurrence not like '%selectPostWithID%'") ; 
+		
+		$msg = $this->get_param('update_message') ; 
+		if ($nblinks_tous!=0){
+			$msg .= "<p>".sprintf("%s identified links in the whole post.", $nblinks_tous)."</p>" ; 
+		}
+		if ($nblinks_nouveau!=0){
+			$msg .= "<p>".sprintf("%s links has been created.", $nblinks_nouveau)."</p>" ; 
+		}
+		if ($nblinks_nouv_te!=0){
+			$msg .= "<p>".sprintf("%s new text has been created for an existing link.", $nblinks_nouv_te)."</p>" ; 
+		}
+		if ($nblinks_occ_maj!=0){
+			$msg .= "<p>".sprintf("%s links has been updated as the number of occurrences has changed.", $nblinks_occ_maj)."</p>" ; 
+		}
+		if ($nblinks_supprim!=0){
+			$msg .= "<p>".sprintf("%s text has been deleted for an existing link.", $nblinks_supprim)."</p>" ; 
+		}
+		if ($nblinks_suppri2!=0){
+			$msg .= "<p>".sprintf("%s links has been deleted from post.", $nblinks_suppri2)."</p>" ; 
+		}
+		if ($nblinks_supp_li!=0){
+			$msg .= "<p>".sprintf("%s links has been deleted from the database as no post uses them.", $nblinks_supp_li)."</p>" ; 
+		}
+		if ($nblinks_supp_l2!=0){
+			$msg .= "<p>".sprintf("%s links has been deleted from the database as no post uses them.", $nblinks_supp_l2)."</p>" ; 
+		}
+		
+		if (!$forced) {
+			$this->set_param('update_message', $msg) ; 
+		}
+	}
+	
+	/** ====================================================================================================================================================
+	* Called when message should be displayed for updated post
+	*
+	*/
+
+	function update_message() {
+		$msg = $this->get_param('update_message') ; 
+		if ($msg!="") {
+			echo '<div class="updated"><p><em>Links-Synthesis</em></p>'.$msg.'</div>' ; 
+			$this->set_param('update_message', "") ; 
+		}
 	}
 	
 	/** ====================================================================================================================================================
@@ -507,7 +618,7 @@ class links_synthesis extends pluginSedLex {
   		
   		// comme d'habitude : $matches[0] represente la valeur totale
   		// $matches[1] represente la premiere parenthese capturante
-  		// /<a([^>]*?)href=["\']([^"\']*?)["\']([^>]*?)>(.*?)<\/a>/is
+  		// /<a([^>]*?)href=["\']([^"\']*?)["\']([^>]*?)>(.*?)<\/a>/isu
 		
 		$true_content = $this->content_for_callback ; 
 		
@@ -550,7 +661,8 @@ class links_synthesis extends pluginSedLex {
 			if (strpos($matches[2], home_url())!==false) {
 				return $matches[0] ; 
 			}		
-  		}		
+  		}	
+	
 		
 		// We update the list
    		if (!isset($this->table_links[$key_url])) {
@@ -570,7 +682,6 @@ class links_synthesis extends pluginSedLex {
 				$this->table_links[$key_url] = array("anchor"=>false, "num"=>$this->count_nb, "occ"=> array(), "url"=>$short_url, "title"=>$result[0]->title, "status"=>$status, "metatag"=>$result[0]->metatag, "header"=>$result[0]->header, "http_code"=>$result[0]->http_code) ; 				
 			} else {
 				$this->table_links[$key_url] = array("anchor"=>false, "num"=>$this->count_nb, "occ"=> array(), "url"=>$short_url, "title"=>"", "status"=>$this->http_status_code_string(-1, true, true) , "metatag"=>serialize(array()), "header"=>serialize(array()), "http_code"=>-1) ; 				
-				$wpdb->query("INSERT INTO ".$this->table_name." (url, http_code) VALUES ('".str_replace("'", "&#39;", $matches[2])."', -1) ;") ; 	
 			}
    		} 
    		
@@ -590,7 +701,6 @@ class links_synthesis extends pluginSedLex {
 				$this->table_links[sha1($matches[2])] = array("anchor"=>true, "num"=>-1, "occ"=> array(), "url"=>$matches[2], "title"=>$result[0]->title, "status"=>$ancre_status, "metatag"=>$result[0]->metatag, "header"=>$result[0]->header, "http_code"=>$result[0]->http_code) ; 				
 			} else {
 				$this->table_links[sha1($matches[2])] = array("anchor"=>true, "num"=>-1, "occ"=> array(), "url"=>$matches[2], "title"=>"", "status"=>$this->http_status_code_string(-1, true, true) , "metatag"=>serialize(array()), "header"=>serialize(array()), "http_code"=>-1) ; 				
-				$wpdb->query("INSERT INTO ".$this->table_name." (url, http_code) VALUES ('".str_replace("'", "&#39;", $matches[2])."', -1) ;") ; 	
 			}
    		} 
    		
@@ -613,7 +723,7 @@ class links_synthesis extends pluginSedLex {
 		$lien_final = $matches[0] ; 
 				
 		// Si on veut avoir une miniature lorsque l'on met la souris dessus
-		// /<a([^>]*?)href=["\']([^"\']*?)["\']([^>]*?)>(.*?)<\/a>/is
+		// /<a([^>]*?)href=["\']([^"\']*?)["\']([^>]*?)>(.*?)<\/a>/isu
 		if ($this->get_param("show_thb_onover")) {
 									
 			// We create the folder for the img files
@@ -700,6 +810,8 @@ class links_synthesis extends pluginSedLex {
 			case 'handle_anchor' : return true ; 
 			case 'check_presence_anchor' : return true ; 
 			
+			case 'update_message' : return "" ; 
+			
 			case 'display' : return true ; 
 			case 'display_admin' : return true ; 
 			case 'display_error_admin' : return false ; 
@@ -717,31 +829,28 @@ class links_synthesis extends pluginSedLex {
    padding : 10px;
 }
 
+.thumbnail_url_LS {
+    z-index:999 ; 
+}
+
 .links_synthesis_title {
-   font-size:12px ;
+   font-size:12px !important;
+   line-height:12px !important;
    text-align:center;
    font-weight:bold;
+   margin:1px !important;  
+   padding:1px !important;  
 }
 
 p.links_synthesis_entry {
-   font-size:12px ;
-   margin:2px;  
-   padding:2px;  
+   font-size:11px !important;
+   line-height:12px !important;
+   margin:1px !important;  
+   padding:1px !important;  
 }
 
 .links_synthesis_print_only {
 	display:none;
-}
-
-.synthesis_sup {
-	font-size:70% ;
-	vertical-align: super;
-}
-
-.thumbnail_url_LS {
-    z-index:999 ; 
-    padding:0px;
-    border:1px solid #666666 ; 
 }
 
 @media print {
@@ -764,6 +873,9 @@ p.links_synthesis_entry {
 			case 'list_link_id_to_check': return array()			; break ; 
 			case 'nb_link_to_check'  : return 0 ; break ; 
 			case 'max_page_to_check'  : return 200 ; break ; 
+
+			case 'between_two_requests' 		: return 2 		; break ; 
+			case 'last_request' 		: return 0 		; break ; 
 			
 			case 'show_thb_onover' : return false ; break ;  
 			case 'enable_grabzit' : return false ; break ;  
@@ -1212,6 +1324,7 @@ p.links_synthesis_entry {
 				$params->add_param('check_cron', __('Check normal links every (days):',  $this->pluginID)) ;  
 				$params->add_param('check_cron_error', __('Check links with errors every (days):',  $this->pluginID)) ;  
 				$params->add_param('nb_check', __('Number of links to be check by iteration:',  $this->pluginID)) ;  
+				$params->add_param('between_two_requests', __('Number of minutes between two background processing:',  $this->pluginID)) ;
 
 				$params->add_title(__('Advanced options',  $this->pluginID)) ; 
 				$params->add_param('exclu', __('Pages that should be excluded from any actions of this plugin:',  $this->pluginID)) ;  
@@ -1602,7 +1715,7 @@ p.links_synthesis_entry {
 		
 			// On fait semblant que la page est affichée pour récupérer les liens des pages
 			$postpost = get_post($pid) ; 
-			$this->_modify_content($postpost->post_content, 'post', false, $pid) ; 
+			$this->whenPostIsSaved($pid, true) ; 
 		}
 		
 		$this->displayErrorTable() ; 	
@@ -1682,6 +1795,16 @@ p.links_synthesis_entry {
 		global $wpdb ; 
 		global $blog_id ; 
 		
+		// We check that the last request has not been emitted since a too short period of time
+		$now = time() ; 
+		if (!$forced) {
+			$last = $this->get_param('last_request') ; 
+			if ($now-$last<=60*$this->get_param('between_two_requests')) {
+				echo sprintf(__('Only %s seconds since the last computation: please wait!', $this->pluginID), ($now-$last)."" ) ; 
+				return ; 
+			}
+		}
+		$this->set_param('last_request',$now); 
 		
 		$max_num = $this->get_param('nb_check') ; 
 				
@@ -1709,139 +1832,135 @@ p.links_synthesis_entry {
 		
 		// on recupere le contenu du code distant
 		foreach ($results as $r) {	
-			// Si le code est -2, cela veux dire qu'on doit ignorer
-			if ($r->http_code.""!="-2") {	
-				$r->url = str_replace("&amp;", "&", $r->url) ; 
-				$redirection = 0 ; 
-				$real_code = -1 ; 
-				$redirect_link = "" ; 
-				$i=0 ; 
-				while($i<2) {
-					$i++ ; 
-					$content = wp_remote_get($r->url, array( 'timeout'=>13, 'redirection'=>$redirection, 'user-agent' => 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:23.0) Gecko/20131011 Firefox/23.0', 'headers'=>array('user-agent' => 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:23.0) Gecko/20131011 Firefox/23.0'))) ; 
-					if ($redirection!=0) {
-						break ; 
-					}
-					if ((!is_wp_error( $content ))&&(isset($content['response']['code']))&&($content['response']['code']>=300)&&($content['response']['code']<=399)) {
-						$real_code = $content['response']['code'] ; 
-						$redirection = 5 ; 
-						$redirect_link = $content['headers']['location'] ; 
+			$r->url = str_replace("&amp;", "&", $r->url) ; 
+			$redirection = 0 ; 
+			$real_code = -1 ; 
+			$redirect_link = "" ; 
+			$i=0 ; 
+			while($i<2) {
+				$i++ ; 
+				$content = wp_remote_get($r->url, array( 'timeout'=>13, 'redirection'=>$redirection, 'user-agent' => 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:23.0) Gecko/20131011 Firefox/23.0', 'headers'=>array('user-agent' => 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:23.0) Gecko/20131011 Firefox/23.0'))) ; 
+				if ($redirection!=0) {
+					break ; 
+				}
+				if ((!is_wp_error( $content ))&&(isset($content['response']['code']))&&($content['response']['code']>=300)&&($content['response']['code']<=399)) {
+					$real_code = $content['response']['code'] ; 
+					$redirection = 5 ; 
+					$redirect_link = $content['headers']['location'] ; 
+				} else {
+					$break ; 
+				}
+			}
+			if (!$forced) { 
+				echo "Update the link: ".$r->url."\n\r" ; 
+			}
+			if( is_wp_error( $content ) ) {
+				$error_message = $content->get_error_message();
+				echo "Something went wrong: $error_message" ;
+				$header = esc_sql($error_message) ; 
+				echo $header ; 
+				if (is_null($r->failure_first)) {
+					if (($r->http_code==-2)||($r->http_code=="-2")) {
+						$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='-2', failure_first=NOW(), header='".$header."'  WHERE id='".$r->id."'" ; 
 					} else {
-						$break ; 
+						$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='0', failure_first=NOW(), header='".$header."'  WHERE id='".$r->id."'" ; 
+					}
+				} else {
+					if (($r->http_code==-2)||($r->http_code=="-2")) {
+						$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='-2', header='".$header."' WHERE id='".$r->id."'" ; 
+					} else {
+						$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='0', header='".$header."' WHERE id='".$r->id."'" ; 
 					}
 				}
-				if (!$forced) { 
-					echo "Update the link: ".$r->url."\n\r" ; 
+				$wpdb->query($update) ; 
+			}  else {
+				if ($redirect_link!="") {
+					$content['headers']['redirect_url'] = $redirect_link ; 
 				}
-				if( is_wp_error( $content ) ) {
-					$error_message = $content->get_error_message();
-					echo "Something went wrong: $error_message" ;
-					$header = esc_sql($error_message) ; 
-					echo $header ; 
+				$res = $this->parser_general($content) ; 
+
+				if ($res['http_code']!=200) {
 					if (is_null($r->failure_first)) {
 						if (($r->http_code==-2)||($r->http_code=="-2")) {
-							$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='-2', failure_first=NOW(), header='".$header."'  WHERE id='".$r->id."'" ; 
-					 	} else {
-							$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='0', failure_first=NOW(), header='".$header."'  WHERE id='".$r->id."'" ; 
+							$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='-2', failure_first=NOW() WHERE id='".$r->id."'" ; 
+						} else {
+							$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='".$res['http_code']."', failure_first=NOW() WHERE id='".$r->id."'" ; 
 						}
 					} else {
 						if (($r->http_code==-2)||($r->http_code=="-2")) {
-							$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='-2', header='".$header."' WHERE id='".$r->id."'" ; 
+							$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='-2' WHERE id='".$r->id."'" ; 
 						} else {
-							$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='0', header='".$header."' WHERE id='".$r->id."'" ; 
+							$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='".$res['http_code']."' WHERE id='".$r->id."'" ; 
 						}
 					}
-					$wpdb->query($update) ; 
-				}  else {
-					if ($redirect_link!="") {
-						$content['headers']['redirect_url'] = $redirect_link ; 
+				} else {
+					if ($real_code!=-1) {
+						$res['http_code'] = $real_code ; 
 					}
-					$res = $this->parser_general($content) ; 
-
-					if ($res['http_code']!=200) {
-						if (is_null($r->failure_first)) {
-							if (($r->http_code==-2)||($r->http_code=="-2")) {
-								$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='-2', failure_first=NOW() WHERE id='".$r->id."'" ; 
-							} else {
-								$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='".$res['http_code']."', failure_first=NOW() WHERE id='".$r->id."'" ; 
-							}
-						} else {
-							if (($r->http_code==-2)||($r->http_code=="-2")) {
-								$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='-2' WHERE id='".$r->id."'" ; 
-							} else {
-								$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='".$res['http_code']."' WHERE id='".$r->id."'" ; 
+					// On verifie, si on a une ancre, que celle ci se retrouve bien dans la page
+					if (($res['http_code']==200)&&($this->get_param('check_presence_anchor'))) {
+						$anchor = explode("#",$r->url) ; 
+						if (isset($anchor[1])) {
+							$content_body  = $content['body'] ; 
+							if ((!preg_match("/<a(\s)([^>]*)name(\s*)=(\s*)'([^']* )*".$anchor[1]."( [^']*)*'([^>]*)>/ui",$content_body))&&(!preg_match('/<a(\s)([^>]*)name(\s*)=(\s*)"([^"]* )*'.$anchor[1].'( [^"]*)*"([^>]*)>/ui',$content_body))) {
+								$res['http_code'] = 210 ; // no anchor found
 							}
 						}
+					}
+					if (($r->http_code==-2)||($r->http_code=="-2")) {
+						$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='-2', failure_first=NULL, redirect_url='".$res['redirect_url']."', title='".str_replace("'", "&#39;", $res['title'])."', metatag='".str_replace("'", "##&#39;##", $res['metatag'])."', header='".str_replace("'", "##&#39;##", $res['header'])."' WHERE id='".$r->id."'" ; 
 					} else {
-						if ($real_code!=-1) {
-							$res['http_code'] = $real_code ; 
-						}
-						// On verifie, si on a une ancre, que celle ci se retrouve bien dans la page
-						if (($res['http_code']==200)&&($this->get_param('check_presence_anchor'))) {
-							$anchor = explode("#",$r->url) ; 
-							if (isset($anchor[1])) {
-								$content_body  = $content['body'] ; 
-								if ((!preg_match("/<a(\s)([^>]*)name='".$anchor[1]."'([^>]*)>/u",$content_body))&&(!preg_match('/<a(\s)([^>]*)name="'.$anchor[1].'"([^>]*)>/u',$content_body))) {
-									$res['http_code'] = 210 ; // no anchor found
-								}
-							}
-						}
-						if (($r->http_code==-2)||($r->http_code=="-2")) {
-							$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='-2', failure_first=NULL, redirect_url='".$res['redirect_url']."', title='".str_replace("'", "&#39;", $res['title'])."', metatag='".str_replace("'", "##&#39;##", $res['metatag'])."', header='".str_replace("'", "##&#39;##", $res['header'])."' WHERE id='".$r->id."'" ; 
-						} else {
-							$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='".$res['http_code']."', failure_first=NULL, redirect_url='".$res['redirect_url']."', title='".str_replace("'", "&#39;", $res['title'])."', metatag='".str_replace("'", "##&#39;##", $res['metatag'])."', header='".str_replace("'", "##&#39;##", $res['header'])."' WHERE id='".$r->id."'" ; 
-						}
+						$update = "UPDATE ".$this->table_name." SET last_check=NOW(), http_code='".$res['http_code']."', failure_first=NULL, redirect_url='".$res['redirect_url']."', title='".str_replace("'", "&#39;", $res['title'])."', metatag='".str_replace("'", "##&#39;##", $res['metatag'])."', header='".str_replace("'", "##&#39;##", $res['header'])."' WHERE id='".$r->id."'" ; 
 					}
-					$wpdb->query($update) ; 
 				}
-			
-				// Remove the pages that does not exists anymore in occurrence
-				$current_occurrence = unserialize(str_replace("##&#39;##", "'", $r->occurrence)) ; 
-				if (is_array($current_occurrence)) {
-					$new_occurrence = array() ; 
-					foreach ($current_occurrence as $ao) {
-						$id_occ = intval(str_replace("selectPostWithID", "", $ao['id'])) ;
-						$post_occ = get_post ($id_occ) ; 
-						if ((!is_null($post_occ))&&($post_occ->post_status!="trash")) {
-							$new_occurrence[] = $ao ; 
-						}
-					}
-					$new_serialized_occurrence = str_replace("'", "##&#39;##", serialize($new_occurrence)) ;
-					if ($new_serialized_occurrence != $r->occurrence) {
-						if (count($new_occurrence)>0) {
-							$update = "UPDATE ".$this->table_name." SET occurrence='".$new_serialized_occurrence."' WHERE id='".$r->id."'" ; 
-						} else {
-							$update = "DELETE FROM ".$this->table_name." WHERE id='".$r->id."'" ; 
-						}
-						$wpdb->query($update) ; 
-					}
-				}	
-				
-				// Screenshot of the external website
-				if ($this->get_param('enable_grabzit')) {
-					$grabzIt = new GrabzItClient($this->get_param('grabzit_Application_Key'), $this->get_param('grabzit_Application_Secret'));
-					$grabzIt->SetImageOptions($r->url); 
-							
-					// We create the folder for the img files
-					$blog_fold = "" ; 
-					if (is_multisite()) {
-						$blog_fold = $blog_id."/" ; 
-					}
+				$wpdb->query($update) ; 
+			}
 		
-					if (!is_dir(WP_CONTENT_DIR."/sedlex/links-synthesis/".$blog_fold)) {
-						@mkdir(WP_CONTENT_DIR."/sedlex/links-synthesis/".$blog_fold, 0777, true) ; 
+			// Remove the pages that does not exists anymore in occurrence
+			$current_occurrence = unserialize(str_replace("##&#39;##", "'", $r->occurrence)) ; 
+			if (is_array($current_occurrence)) {
+				$new_occurrence = array() ; 
+				foreach ($current_occurrence as $ao) {
+					$id_occ = intval(str_replace("selectPostWithID", "", $ao['id'])) ;
+					$post_occ = get_post ($id_occ) ; 
+					if ((!is_null($post_occ))&&($post_occ->post_status!="trash")) {
+						$new_occurrence[] = $ao ; 
 					}
+				}
+				$new_serialized_occurrence = str_replace("'", "##&#39;##", serialize($new_occurrence)) ;
+				if ($new_serialized_occurrence != $r->occurrence) {
+					if (count($new_occurrence)>0) {
+						$update = "UPDATE ".$this->table_name." SET occurrence='".$new_serialized_occurrence."' WHERE id='".$r->id."'" ; 
+					} else {
+						$update = "DELETE FROM ".$this->table_name." WHERE id='".$r->id."'" ; 
+					}
+					$wpdb->query($update) ; 
+				}
+			}	
+			
+			// Screenshot of the external website
+			if ($this->get_param('enable_grabzit')) {
+				$grabzIt = new GrabzItClient($this->get_param('grabzit_Application_Key'), $this->get_param('grabzit_Application_Secret'));
+				$grabzIt->SetImageOptions($r->url); 
+						
+				// We create the folder for the img files
+				$blog_fold = "" ; 
+				if (is_multisite()) {
+					$blog_fold = $blog_id."/" ; 
+				}
+	
+				if (!is_dir(WP_CONTENT_DIR."/sedlex/links-synthesis/".$blog_fold)) {
+					@mkdir(WP_CONTENT_DIR."/sedlex/links-synthesis/".$blog_fold, 0777, true) ; 
+				}
 
-					$filepath = WP_CONTENT_DIR."/sedlex/links-synthesis/".$blog_fold."/img_".sha1($r->url).".jpg";
-										
-					$grabzIt->SaveTo($filepath);
-				}
-				
-				// ScreenShot with wkhtmltoimage
-				if ($this->get_param('enable_wkhtmltoimage')) {
-					$this->wkurltoimage($r->url, $this->get_param('enable_wkhtmltoimage_winw'), $this->get_param('enable_wkhtmltoimage_w'), $this->get_param('enable_wkhtmltoimage_h')) ; 
-				}
-				
+				$filepath = WP_CONTENT_DIR."/sedlex/links-synthesis/".$blog_fold."/img_".sha1($r->url).".jpg";
+									
+				$grabzIt->SaveTo($filepath);
+			}
+			
+			// ScreenShot with wkhtmltoimage
+			if ($this->get_param('enable_wkhtmltoimage')) {
+				$this->wkurltoimage($r->url, $this->get_param('enable_wkhtmltoimage_winw'), $this->get_param('enable_wkhtmltoimage_w'), $this->get_param('enable_wkhtmltoimage_h')) ; 
 			}
 		}
 		if (!$forced) {
