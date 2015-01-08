@@ -4,7 +4,7 @@ Author: sedLex
 Contributors: sedLex
 Author URI: http://www.sedlex.fr/
 Plugin URI: http://wordpress.org/plugins/links-synthesis/
-Tags: tag
+Tags: links, analysis, check, validity, dead, status
 Requires at least: 3.0
 Tested up to: 4.2
 Stable tag: trunk
@@ -106,4 +106,4 @@ Have fun !
 == Frequently Asked Questions ==
 
  
-InfoVersion:f356fbb4af2915595eb1ceed94609bda5d39d5ea
+InfoVersion:72549bb23aca7cb1bfd232b1d401407a3b5748b5
