@@ -59,6 +59,9 @@ Have fun !
 
 == Changelog ==
 
+= 1.3.2 = 
+* NEW: delete temp file upon desinstall
+
 = 1.3.1 = 
 * New: if a post has not been analyzed, it is automatically anaylzed during its first display
 
@@ -106,4 +109,4 @@ Have fun !
 == Frequently Asked Questions ==
 
  
-InfoVersion:72549bb23aca7cb1bfd232b1d401407a3b5748b5
+InfoVersion:5c3093d0afe4fedaf3bb8e4802db9c18228185fc
